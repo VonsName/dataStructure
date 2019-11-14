@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/list"
 	"fmt"
 )
 
@@ -12,7 +13,7 @@ type Graph struct {
 
 func NewGraph(vertexNum int) *Graph {
 	g := &Graph{
-		vertexList: make([]string, vertexNum),
+		vertexList: nil,
 		edges:      make([][]int, vertexNum),
 		edgesNums:  0,
 	}
@@ -48,74 +49,126 @@ func (g *Graph) ShowGraph() {
 }
 
 /**
+获得当前节点的第一个邻接节点
+*/
+func (g *Graph) getFirstNeighbor(currentIndex int) int {
+	for i := 0; i < len(g.vertexList); i++ {
+		if g.edges[currentIndex][i] > 0 {
+			return i
+		}
+	}
+	return -1
+}
+
+/**
+根据 currentIndex 获得targetIndex后的一个邻接节点
+*/
+func (g *Graph) getNextNeighbor(currentIndex int, targetIndex int) int {
+	for i := targetIndex + 1; i < len(g.vertexList); i++ {
+		if g.edges[currentIndex][i] > 0 {
+			return i
+		}
+	}
+	return -1
+}
+
+/**
 深度优先
 */
-func (g *Graph) dfs(startVertex int) {
+func (g *Graph) dfs1(startVertex int, ma []bool) {
 	if startVertex > (len(g.vertexList) - 1) {
 		panic("index out bounds of vertexList")
 	}
-	// 用于表示节点是否被访问,1-表示未访问 0-表示已经访问
-	ma := map[string]int{"A": 1, "B": 1, "C": 1, "D": 1, "E": 1}
-	currentVertex := startVertex // 当前正在被访问的顶点
+	fmt.Printf("%s ", g.vertexList[startVertex])
+	//标记为已经访问
+	ma[startVertex] = true
 
-	s := g.vertexList[currentVertex]
-	fmt.Printf("%s ", s)
-	ma[s] = 0
+	neighbor := g.getFirstNeighbor(startVertex)
+	//存在一条边
+	for neighbor != -1 {
+		//没有被访问过
+		if !ma[neighbor] {
+			g.dfs1(neighbor, ma)
+		}
+		neighbor = g.getNextNeighbor(startVertex, neighbor)
+	}
+}
 
-bLabel:
-	for index := 0; index < len(g.edges); index++ {
-
-		for !allVisited(ma) {
-			// 存在边
-			visitable := (g.edges[currentVertex][index] == 1) && (g.edges[index][currentVertex] == 1)
-			if visitable {
-				// 没有被访问过
-				if ma[g.vertexList[index]] == 1 {
-					s := g.vertexList[currentVertex]
-					fmt.Printf("%s ", s)
-					ma[s] = 0
-					currentVertex = index
-					index = 0
-				}
-			} else {
-				break bLabel
-			}
+func (g *Graph) dfs(ma []bool) {
+	for i := 0; i < len(g.vertexList); i++ {
+		if !ma[i] {
+			g.dfs1(i, ma)
 		}
 	}
 }
 
-func allVisited(ma map[string]int) bool {
-	allVisited := true
-	for _, v := range ma {
-		if v == 1 {
-			allVisited = false
-			break
+func (g *Graph) bfs1(startVertex int, ma []bool) {
+	if startVertex > (len(g.vertexList) - 1) {
+		panic("index out bounds of vertexList")
+	}
+	fmt.Printf("%s ", g.vertexList[startVertex])
+	ma[startVertex] = true
+	i := list.New()
+	i.PushBack(startVertex)
+	for i.Len() != 0 {
+		front := i.Front()
+		i.Remove(front)
+		neighbor := g.getFirstNeighbor(front.Value.(int))
+		for neighbor != -1 {
+			if !ma[neighbor] {
+				fmt.Printf("%s ", g.vertexList[neighbor])
+				ma[neighbor] = true
+				i.PushBack(neighbor)
+			}
+			neighbor = g.getNextNeighbor(front.Value.(int), neighbor)
 		}
 	}
-	return allVisited
+}
+
+/**
+广度优先
+*/
+func (g *Graph) bfs(ma []bool) {
+	for i := 0; i < len(g.vertexList); i++ {
+		if !ma[i] {
+			g.bfs1(i, ma)
+		}
+	}
 }
 
 func main() {
-	graph := NewGraph(5)
+	graph := NewGraph(8)
 	buildGraph(graph)
+
+	ma := []bool{false, false, false, false, false, false, false, false}
+	graph.dfs(ma)
+	ma = []bool{false, false, false, false, false, false, false, false}
+
+	fmt.Println()
+	graph.bfs(ma)
 
 }
 
 func buildGraph(graph *Graph) {
 
-	graph.AddVertex("A")
-	graph.AddVertex("B")
-	graph.AddVertex("C")
-	graph.AddVertex("D")
-	graph.AddVertex("E")
+	graph.AddVertex("1")
+	graph.AddVertex("2")
+	graph.AddVertex("3")
+	graph.AddVertex("4")
+	graph.AddVertex("5")
+	graph.AddVertex("6")
+	graph.AddVertex("7")
+	graph.AddVertex("8")
 
 	graph.AddEdges(0, 1, 1)
 	graph.AddEdges(0, 2, 1)
-	graph.AddEdges(1, 2, 1)
 	graph.AddEdges(1, 3, 1)
 	graph.AddEdges(1, 4, 1)
-	graph.AddEdges(3, 1, 1)
-	graph.AddEdges(4, 1, 1)
+	graph.AddEdges(3, 7, 1)
+	graph.AddEdges(4, 7, 1)
+	graph.AddEdges(2, 5, 1)
+	graph.AddEdges(2, 6, 1)
+	graph.AddEdges(5, 6, 1)
 
 	graph.ShowGraph()
 }
