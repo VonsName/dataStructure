@@ -6,11 +6,72 @@ func main() {
 	// directInsertSort("desc")
 
 	a := []int{6, 5, 2, 13, 6, 23, 3, 8, 9}
-	bubbleSort1(a)
-	reverse(a)
-	fmt.Printf("%v\n", a)
+	// bubbleSort1(a)
+	// reverse(a)
+	// fastSort(a, 0, len(a)-1)
 	// bothWayBubbleSort(a)
 	// fmt.Printf("%v\n", a)
+	shellSort(a)
+
+	printOut(345)
+}
+
+func printOut(n int) {
+	if n > 10 {
+		printOut(n / 10)
+	}
+	fmt.Printf("%v ", n%10)
+}
+func shellSort(a []int) {
+	var j int
+	for gap := len(a) / 2; gap > 0; gap /= 2 {
+		for i := gap; i < len(a); i++ {
+			temp := a[i]
+			for j = i; j >= gap && temp < a[j-gap]; j -= gap {
+				a[j] = a[j-gap]
+			}
+			a[j] = temp
+		}
+	}
+
+	fmt.Printf("%v\n", a)
+}
+
+/**
+分区
+*/
+func partition(a []int, i int, j int) int {
+	r := a[i]
+	for i < j {
+		for j > i && a[j] > r {
+			j--
+		}
+		if i < j {
+			a[i] = a[j]
+			i++
+		}
+		for i < j && a[i] < r {
+			i++
+		}
+		if i < j {
+			a[j] = a[i]
+			j--
+		}
+	}
+	a[i] = r
+	fmt.Printf("%v\n", a)
+	return i
+}
+
+/**
+快速排序
+*/
+func fastSort(a []int, low int, high int) {
+	if low < high {
+		i2 := partition(a, low, high)
+		fastSort(a, low, i2-1)
+		fastSort(a, i2+1, high)
+	}
 }
 
 func reverse(src []int) {
@@ -56,6 +117,9 @@ func bothWayBubbleSort(a []int) {
 	}
 }
 
+/**
+冒泡
+*/
 func bubbleSort1(a []int) {
 
 	for i := 0; i < len(a); i++ {
@@ -70,6 +134,9 @@ func bubbleSort1(a []int) {
 	fmt.Printf("%v\n", a)
 }
 
+/**
+冒泡
+*/
 func bubbleSort(a []int) {
 
 	for i := 0; i < len(a); i++ {
