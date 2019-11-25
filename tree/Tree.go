@@ -42,9 +42,10 @@ func (s *Stack) show() {
 }
 
 type TreeNode struct {
-	data  int
-	left  *TreeNode // 左子树
-	right *TreeNode // 右子树
+	data   int
+	left   *TreeNode // 左子树
+	right  *TreeNode // 右子树
+	parent *TreeNode // 父节点
 }
 
 /**
@@ -113,33 +114,120 @@ func isNumber(c string) (matched bool) {
 	return matched
 }
 
-func (root *TreeNode) add(data int) *TreeNode {
-	if root == nil {
+func (tree *TreeNode) add(data int) *TreeNode {
+	if tree == nil {
 		return &TreeNode{
 			data:  data,
 			left:  nil,
 			right: nil,
 		}
 	}
-	if data < root.data {
-		root.left = root.left.add(data)
+	if data < tree.data {
+		tree.left = tree.left.add(data)
+		tree.left.parent = tree
 	} else {
-		root.right = root.right.add(data)
+		tree.right = tree.right.add(data)
+		tree.right.parent = tree
 	}
-	return root
+	return tree
+}
+
+func (tree *TreeNode) contains(data int) (node *TreeNode, contain bool) {
+
+	if tree == nil {
+		return nil, false
+	}
+	if data == tree.data {
+		return tree, true
+	} else if data > tree.data {
+		return tree.right.contains(data)
+	} else if data < tree.data {
+		return tree.left.contains(data)
+	}
+	return nil, false
+}
+
+/**
+删除节点
+*/
+func (tree *TreeNode) remove(target int) (targetNode *TreeNode, notExists bool) {
+
+	if tree == nil { // 空树
+		return nil, true
+	}
+	if target == tree.data {
+		if tree.left != nil && tree.right != nil {
+			minNode := tree.right.findMin()
+			minNode.parent.left = minNode.right
+		}
+	}
+
+	return nil, true
+}
+
+func (tree *TreeNode) findMin() (minNode *TreeNode) {
+	if tree == nil {
+		return nil
+	}
+	if tree.left != nil {
+		return tree.left.findMin()
+	}
+	return tree
+}
+
+func (tree *TreeNode) findMax() (maxNode *TreeNode) {
+	if tree == nil {
+		return nil
+	}
+	if tree.right != nil {
+		return tree.right.findMax()
+	}
+	return tree
 }
 
 func main() {
 	root := &TreeNode{
-		data:  3,
+		data:  8,
 		left:  nil,
 		right: nil,
 	}
 	root.add(5)
-	root.add(2)
+	root.add(15)
+	root.add(3)
 	root.add(7)
+	root.add(1)
+	root.add(11)
+	root.add(23)
+	root.add(9)
+	root.add(20)
+	root.add(55)
 
 	postOrderTraversal(root)
 	println()
 	preOrderTraversal(root)
+	println()
+	middleOrderTraversal(root)
+	println()
+	node, contain := root.contains(5)
+	fmt.Printf("%d contains of = %v\n", 5, contain)
+	if contain {
+		fmt.Printf("%d.parent=%d\n", node.data, node.parent.data)
+	}
+	node, contain = root.contains(3)
+	fmt.Printf("%d contains of = %v\n", 3, contain)
+	if contain {
+		fmt.Printf("%d.parent=%d\n", node.data, node.parent.data)
+	}
+	node, contain = root.contains(7)
+	fmt.Printf("%d contains of = %v\n", 7, contain)
+	if contain {
+		fmt.Printf("%d.parent=%d\n", node.data, node.parent.data)
+	}
+	data := root.findMin()
+	fmt.Printf("min =%v \n", data.data)
+	fmt.Printf("%d.parent=%d\n", data.data, data.parent.data)
+
+	data = root.findMax()
+	fmt.Printf("Max =%v \n", data.data)
+	fmt.Printf("%d.parent=%d\n", data.data, data.parent.data)
 }
