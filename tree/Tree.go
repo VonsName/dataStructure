@@ -158,7 +158,7 @@ func (tree *TreeNode) remove(target int) (targetNode *TreeNode, notExists bool) 
 	if target == tree.data {
 		if tree.left != nil && tree.right != nil {
 			minNode := tree.right.findMin()
-			minNode.parent.left = minNode.right
+			minNode.parent.left = minNode.right // TODO
 		}
 	}
 
