@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"regexp"
 )
 
@@ -114,35 +115,35 @@ func isNumber(c string) (matched bool) {
 	return matched
 }
 
-func (tree *TreeNode) add(data int) *TreeNode {
-	if tree == nil {
+func (root *TreeNode) add(data int) *TreeNode {
+	if root == nil {
 		return &TreeNode{
 			data:  data,
 			left:  nil,
 			right: nil,
 		}
 	}
-	if data < tree.data {
-		tree.left = tree.left.add(data)
-		tree.left.parent = tree
+	if data < root.data {
+		root.left = root.left.add(data)
+		root.left.parent = root
 	} else {
-		tree.right = tree.right.add(data)
-		tree.right.parent = tree
+		root.right = root.right.add(data)
+		root.right.parent = root
 	}
-	return tree
+	return root
 }
 
-func (tree *TreeNode) contains(data int) (node *TreeNode, contain bool) {
+func (root *TreeNode) contains(data int) (node *TreeNode, contain bool) {
 
-	if tree == nil {
+	if root == nil {
 		return nil, false
 	}
-	if data == tree.data {
-		return tree, true
-	} else if data > tree.data {
-		return tree.right.contains(data)
-	} else if data < tree.data {
-		return tree.left.contains(data)
+	if data == root.data {
+		return root, true
+	} else if data > root.data {
+		return root.right.contains(data)
+	} else if data < root.data {
+		return root.left.contains(data)
 	}
 	return nil, false
 }
@@ -150,39 +151,63 @@ func (tree *TreeNode) contains(data int) (node *TreeNode, contain bool) {
 /**
 删除节点
 */
-func (tree *TreeNode) remove(target int) (targetNode *TreeNode, notExists bool) {
+func (*TreeNode) remove(tree *TreeNode, target int) *TreeNode {
 
 	if tree == nil { // 空树
-		return nil, true
+		return nil
 	}
 	if target == tree.data {
 		if tree.left != nil && tree.right != nil {
-			minNode := tree.right.findMin()
-			minNode.parent.left = minNode.right // TODO
+			tree.data = tree.right.findMin().data
+			fmt.Printf("min == %d \n", tree.data)
+			tree.right = tree.remove(tree.right, tree.data)
+		} else if tree.left == nil && tree.right == nil {
+			tree = nil
+		} else {
+			temp := tree.parent
+			if tree.left != nil {
+				tree = tree.left
+			} else {
+				tree = tree.right
+			}
+			tree.parent = temp
 		}
-	}
-
-	return nil, true
-}
-
-func (tree *TreeNode) findMin() (minNode *TreeNode) {
-	if tree == nil {
-		return nil
-	}
-	if tree.left != nil {
-		return tree.left.findMin()
+	} else if target > tree.data {
+		tree.right = tree.remove(tree.right, target)
+	} else if target < tree.data {
+		tree.left = tree.left.remove(tree.left, target)
 	}
 	return tree
 }
 
-func (tree *TreeNode) findMax() (maxNode *TreeNode) {
-	if tree == nil {
+func (root *TreeNode) findMin() (minNode *TreeNode) {
+	if root == nil {
 		return nil
 	}
-	if tree.right != nil {
-		return tree.right.findMax()
+	if root.left != nil {
+		return root.left.findMin()
 	}
-	return tree
+	return root
+}
+
+func (root *TreeNode) findMax() (maxNode *TreeNode) {
+	if root == nil {
+		return nil
+	}
+	if root.right != nil {
+		return root.right.findMax()
+	}
+	return root
+}
+
+/**
+获取树的高度
+*/
+func (root *TreeNode) height() int {
+	if root == nil {
+		return -1
+	}
+	return int(1 + math.Max(float64(root.left.height()), float64(root.right.height())))
 }
 
 func main() {
@@ -200,7 +225,7 @@ func main() {
 	root.add(23)
 	root.add(9)
 	root.add(20)
-	root.add(55)
+	root.add(21)
 
 	postOrderTraversal(root)
 	println()
@@ -208,26 +233,40 @@ func main() {
 	println()
 	middleOrderTraversal(root)
 	println()
-	node, contain := root.contains(5)
-	fmt.Printf("%d contains of = %v\n", 5, contain)
-	if contain {
-		fmt.Printf("%d.parent=%d\n", node.data, node.parent.data)
-	}
-	node, contain = root.contains(3)
-	fmt.Printf("%d contains of = %v\n", 3, contain)
-	if contain {
-		fmt.Printf("%d.parent=%d\n", node.data, node.parent.data)
-	}
-	node, contain = root.contains(7)
-	fmt.Printf("%d contains of = %v\n", 7, contain)
-	if contain {
-		fmt.Printf("%d.parent=%d\n", node.data, node.parent.data)
-	}
-	data := root.findMin()
-	fmt.Printf("min =%v \n", data.data)
-	fmt.Printf("%d.parent=%d\n", data.data, data.parent.data)
+	// node, contain := root.contains(5)
+	// fmt.Printf("%d contains of = %v\n", 5, contain)
+	// if contain {
+	// 	fmt.Printf("%d.parent=%d\n", node.data, node.parent.data)
+	// }
+	// node, contain = root.contains(3)
+	// fmt.Printf("%d contains of = %v\n", 3, contain)
+	// if contain {
+	// 	fmt.Printf("%d.parent=%d\n", node.data, node.parent.data)
+	// }
+	// node, contain = root.contains(7)
+	// fmt.Printf("%d contains of = %v\n", 7, contain)
+	// if contain {
+	// 	fmt.Printf("%d.parent=%d\n", node.data, node.parent.data)
+	// }
+	// data := root.findMin()
+	// fmt.Printf("min =%v \n", data.data)
+	// fmt.Printf("%d.parent=%d\n", data.data, data.parent.data)
 
-	data = root.findMax()
-	fmt.Printf("Max =%v \n", data.data)
-	fmt.Printf("%d.parent=%d\n", data.data, data.parent.data)
+	// data = root.findMax()
+	// fmt.Printf("Max =%v \n", data.data)
+	// fmt.Printf("%d.parent=%d\n", data.data, data.parent.data)
+
+	println("remove====================")
+	targetNode := root.remove(root, 15)
+	middleOrderTraversal(targetNode)
+
+	println()
+	node, contain := root.contains(21)
+	if contain && node.parent != nil {
+		fmt.Printf("%d.parent=%d", node.data, node.parent.data)
+	}
+
+	println()
+	height := root.height()
+	fmt.Printf("height %d \n", height)
 }
