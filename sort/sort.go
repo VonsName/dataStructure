@@ -11,9 +11,11 @@ func main() {
 	// fastSort(a, 0, len(a)-1)
 	// bothWayBubbleSort(a)
 	// fmt.Printf("%v\n", a)
-	shellSort(a)
-
-	printOut(345)
+	// shellSort(a)
+	//
+	// printOut(345)
+	res := quickSort(a)
+	fmt.Printf("%v ", res)
 }
 
 func printOut(n int) {
@@ -151,6 +153,32 @@ func bubbleSort(a []int) {
 	}
 
 	fmt.Printf("%v\n", a)
+}
+
+func quickSort(items []int) (res []int) {
+
+	var smaller []int
+	var larger []int
+	var same []int
+	if len(items) > 1 {
+		chosen := items[len(items)/2]
+		for i := 0; i < len(items); i++ {
+			v := items[i]
+			if v < chosen {
+				smaller = append(smaller, v)
+			} else if v > chosen {
+				larger = append(larger, v)
+			} else {
+				same = append(same, v)
+			}
+		}
+		quickSort(smaller)
+		quickSort(larger)
+		res = append(res, smaller...)
+		res = append(res, same...)
+		res = append(res, larger...)
+	}
+	return res
 }
 
 /**
