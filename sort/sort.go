@@ -1,11 +1,14 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func main() {
 	// directInsertSort("desc")
 
 	a := []int{6, 5, 2, 13, 6, 23, 3, 8, 9}
+	s := a[:]
 	// bubbleSort1(a)
 	// reverse(a)
 	// fastSort(a, 0, len(a)-1)
@@ -14,8 +17,15 @@ func main() {
 	// shellSort(a)
 	//
 	// printOut(345)
-	res := quickSort(a)
-	fmt.Printf("%v ", res)
+	// var res []int
+	// fmt.Printf("%v ", a)
+	quickSort(a)
+	fmt.Printf("a=%v\n", a)
+	fmt.Printf("origin=%v\n", s)
+	s = append(s[:0], 1, 2, 3, 4, 5, 6, 7, 8, 9)
+	fmt.Printf("append1=%v \n", s)
+	s = append(s[:], 1, 2, 3, 4, 5, 6, 7, 8, 9)
+	fmt.Printf("append2=%v \n", s)
 }
 
 func printOut(n int) {
@@ -155,12 +165,12 @@ func bubbleSort(a []int) {
 	fmt.Printf("%v\n", a)
 }
 
-func quickSort(items []int) (res []int) {
-
-	var smaller []int
-	var larger []int
-	var same []int
+func quickSort(items []int) {
 	if len(items) > 1 {
+		var smaller []int
+		var larger []int
+		var same []int
+
 		chosen := items[len(items)/2]
 		for i := 0; i < len(items); i++ {
 			v := items[i]
@@ -174,11 +184,10 @@ func quickSort(items []int) (res []int) {
 		}
 		quickSort(smaller)
 		quickSort(larger)
-		res = append(res, smaller...)
-		res = append(res, same...)
-		res = append(res, larger...)
+		items = append(items[:0], smaller...)
+		items = append(items, same...)
+		items = append(items, larger...)
 	}
-	return res
 }
 
 /**
