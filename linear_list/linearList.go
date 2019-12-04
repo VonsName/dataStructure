@@ -4,15 +4,15 @@ import (
 	"fmt"
 )
 
-type List interface {
+type MList interface {
 	Add(data int) int
-	remove(data int)
-	clear()
-	show()
-	removeByIndex(index int) int
-	exists(data int) bool
+	Remove(data int)
+	Clear()
+	Show()
+	RemoveByIndex(index int) int
+	Exists(data int) bool
 	Size() int
-	get(index int) int
+	Get(index int) int
 }
 
 type SqList struct {
@@ -41,22 +41,22 @@ func (list *SqList) Size() int {
 	return list.size
 }
 
-func (list *SqList) get(index int) int {
+func (list *SqList) Get(index int) int {
 	if index < 0 || index >= len(list.data) {
 		panic(fmt.Sprintf("outbound index of %d", index))
 	}
 	return list.data[index]
 }
 
-func (list *SqList) clear() {
+func (list *SqList) Clear() {
 	list.data = make([]int, len(list.data))
 }
 
-func (list *SqList) remove(data int) {
+func (list *SqList) Remove(data int) {
 	if len(list.data) == 0 {
 		panic("list must not be nil")
 	}
-	if !list.exists(data) {
+	if !list.Exists(data) {
 		panic(fmt.Sprintf("%d is not exists", data))
 	}
 	index := 0
@@ -72,7 +72,7 @@ func (list *SqList) remove(data int) {
 	list.size--
 }
 
-func (list *SqList) exists(data int) (exist bool) {
+func (list *SqList) Exists(data int) (exist bool) {
 	exist = false
 	for i := 0; i < list.size; i++ {
 		if list.data[i] == data {
@@ -82,7 +82,7 @@ func (list *SqList) exists(data int) (exist bool) {
 	}
 	return
 }
-func (list *SqList) removeByIndex(index int) int {
+func (list *SqList) RemoveByIndex(index int) int {
 	if index < 0 || index > list.Size() {
 		panic(fmt.Sprintf("index outbound of %d", index))
 	}
@@ -93,7 +93,7 @@ func (list *SqList) removeByIndex(index int) int {
 	list.size--
 	return data
 }
-func (list *SqList) show() {
+func (list *SqList) Show() {
 
 	for i := 0; i < list.size; i++ {
 		fmt.Printf("k=%d,v=%d\n", i, list.data[i])
@@ -102,8 +102,9 @@ func (list *SqList) show() {
 }
 
 type Node struct {
-	data int
-	next *Node
+	data     int
+	next     *Node
+	previous *Node
 }
 type LinkedList struct {
 	header *Node
@@ -144,7 +145,7 @@ func (list *LinkedList) Add(data int) int {
 	}
 }
 
-func (list *LinkedList) show() {
+func (list *LinkedList) Show() {
 	node := list.header
 	for node != nil {
 		fmt.Printf("%d ", node.data)
@@ -153,15 +154,15 @@ func (list *LinkedList) show() {
 	fmt.Println()
 }
 
-func (list *LinkedList) clear() {
+func (list *LinkedList) Clear() {
 	list.header.data = 0
 	list.header.next = nil
 	list.tail = list.header
 	list.size = 0
 }
 
-func (list *LinkedList) remove(data int) {
-	if !list.exists(data) {
+func (list *LinkedList) Remove(data int) {
+	if !list.Exists(data) {
 		panic("元素不存在")
 	}
 	node := list.header
@@ -181,7 +182,7 @@ func (list *LinkedList) remove(data int) {
 	}
 }
 
-func (list *LinkedList) exists(data int) (exist bool) {
+func (list *LinkedList) Exists(data int) (exist bool) {
 	node := list.header
 	for node != nil {
 		if node.data == data {
@@ -192,7 +193,7 @@ func (list *LinkedList) exists(data int) (exist bool) {
 	return false
 }
 
-func (list *LinkedList) get(index int) int {
+func (list *LinkedList) Get(index int) int {
 	if index < 0 || index > list.size {
 		panic(fmt.Sprintf("index outbound of %d\n", index))
 	}
@@ -206,7 +207,7 @@ func (list *LinkedList) get(index int) int {
 	panic("outbound of index")
 }
 
-func (list *LinkedList) removeByIndex(index int) (data int) {
+func (list *LinkedList) RemoveByIndex(index int) (data int) {
 	if index < 0 || index > list.size {
 		panic(fmt.Sprintf("index outbound of %d\n", index))
 	}
@@ -234,32 +235,369 @@ func (list *LinkedList) Size() int {
 	return list.size
 }
 
-func (list *LinkedList) reverse() {
-	reverses(list, list.header, 0)
+func (list *LinkedList) Reverse() {
+	reverses(list, list.header)
 }
-func reverses(list *LinkedList, node *Node, i int) {
+func reverses(list *LinkedList, node *Node) {
 	if node.next == nil {
-		return
-	}
-	i++
-	reverses(list, node.next, i)
-	if i == list.size {
 		list.header = node
 		list.tail = node
+		return
 	}
-	if i == 1 {
+	reverses(list, node.next)
+	list.tail.next = node
+	list.tail = node
+	list.tail.next = nil
+}
+
+func (list *LinkedList) AddAll(targetList *LinkedList) {
+	if targetList == nil {
+		panic("targetList must not be nil")
+	}
+	list.tail.next = targetList.header
+	list.tail = targetList.tail
+}
+
+type CircleBothWayLinkedList struct {
+	header *Node
+	tail   *Node
+	size   int
+}
+
+func newCircleLinkedList() *CircleBothWayLinkedList {
+
+	header := &Node{
+		data:     0,
+		next:     nil,
+		previous: nil,
+	}
+	list := &CircleBothWayLinkedList{
+		header: header,
+		tail:   header,
+		size:   0,
+	}
+	initCircleLinkedList(list)
+	return list
+}
+
+func initCircleLinkedList(list *CircleBothWayLinkedList) {
+	list.tail = list.header
+	list.tail.previous = list.header
+	list.header.next = nil
+	list.header.previous = list.tail
+	list.size = 0
+	list.header.data = -99999
+}
+
+func (list *CircleBothWayLinkedList) AddAll(targetList *CircleBothWayLinkedList) {
+	if targetList == nil {
+		panic("targetList must not be nil")
+	}
+	targetList.header.previous = list.tail
+	targetList.tail.next = list.header
+	list.tail.next = targetList.header
+	list.tail = targetList.tail
+	list.header.previous = targetList.tail
+}
+
+func (list *CircleBothWayLinkedList) Add(data int) {
+	if list.header.next == nil {
+		list.header.data = data
+		list.header.next = list.tail
+	} else {
+		node := &Node{
+			data:     data,
+			next:     list.header,
+			previous: list.tail,
+		}
+		if list.header == list.tail {
+			list.header.next = node
+		} else {
+			list.tail.next = node
+		}
 		list.tail = node
+		list.header.previous = list.tail
+	}
+	list.size++
+}
+
+func (list *CircleBothWayLinkedList) Size() int {
+	return list.size
+}
+
+func (list *CircleBothWayLinkedList) Show() {
+	if list.size == 0 {
+		return
+	}
+	node := list.header
+	for node.next != list.header {
+		fmt.Printf("%d ", node.data)
+		node = node.next
+	}
+	fmt.Printf("%d \n", node.data)
+}
+
+func (list *CircleBothWayLinkedList) Exists(data int) (exist bool) {
+	node := list.header
+	for node.next != list.header {
+		if node.data == data {
+			return true
+		}
+		node = node.next
+	}
+	// 最后一个节点
+	if node.data == data {
+		return true
+	}
+	return false
+}
+func (list *CircleBothWayLinkedList) Remove(data int) {
+	if !list.Exists(data) {
+		panic(fmt.Sprintf("data %d not exists\n", data))
+	}
+	node := list.header
+	for node.next != list.header {
+		if node.data == data {
+			deletes(node, list)
+			break
+		}
+		node = node.next
+	}
+	// 最后一个尾结点的比较
+	if node.data == data {
+		deletes(node, list)
 	}
 }
 
-type CircleLinkedList struct {
+func deletes(node *Node, list *CircleBothWayLinkedList) {
+	if node == list.header {
+		list.header = list.header.next
+		list.tail.next = list.header
+		list.header.previous = list.tail
+	} else if node == list.tail {
+		list.tail = list.tail.previous
+		list.tail.next = list.header
+	} else {
+		temp := node.next
+		temp.previous = node.previous
+		node.previous.next = temp
+	}
+	list.size--
+}
+
+func (list *CircleBothWayLinkedList) RemoveByIndex(index int) int {
+	if index < 0 || index >= list.size {
+		panic(fmt.Sprintf("index %d out bound \n", index))
+	}
+	node := list.header
+	for i := 0; i < index; i++ {
+		node = node.next
+	}
+	deletes(node, list)
+	return node.data
+}
+func (list *CircleBothWayLinkedList) Clear() {
+	initCircleLinkedList(list)
+}
+func (list *CircleBothWayLinkedList) Get(index int) int {
+	if index < 0 || index >= list.size {
+		panic(fmt.Sprintf("index %d out bound \n", index))
+	}
+	node := list.header
+	for i := 0; i < index; i++ {
+		node = node.next
+	}
+	return node.data
+}
+
+func (list *CircleBothWayLinkedList) Reverse() {
+	r(list, list.header)
+}
+
+// 1 2 3 4 5
+// 5 4 3 2 1
+func r(list *CircleBothWayLinkedList, node *Node) {
+	if node.next == list.header {
+		header := list.header
+		list.header = node
+		list.header.previous = header
+		list.tail = list.header
+		return
+	}
+	r(list, node.next)
+	node.previous = list.tail
+	list.tail.next = node
+	list.tail = node
+	list.tail.next = list.header
+}
+
+type LinkedStack struct {
+	top  *Node
+	size int
+}
+
+func newLinkedStack() *LinkedStack {
+	return &LinkedStack{top: &Node{
+		data:     0,
+		next:     nil,
+		previous: nil,
+	}}
+}
+
+func (stack *LinkedStack) Push(data int) {
+
+	if stack.size == 0 {
+		stack.top.data = data
+	} else {
+		newNode := &Node{
+			data:     data,
+			next:     nil,
+			previous: nil,
+		}
+		newNode.next = stack.top
+		stack.top = newNode
+	}
+	stack.size++
+}
+
+func (stack *LinkedStack) Pop() int {
+	if stack.size == 0 {
+		panic("stack is empty")
+	}
+	node := stack.top
+	stack.top = stack.top.next
+	stack.size--
+	return node.data
+}
+
+func (stack *LinkedStack) Show() {
+
+	node := stack.top
+	for node != nil {
+		fmt.Printf("%d ", node.data)
+		node = node.next
+	}
+	fmt.Println()
 }
 
 func main() {
 	// testSqList()
-	testLinkedList()
+	// testLinkedList()
+	// testCircleLinkedList()
+	testLinkedStack()
 }
 
+func testLinkedStack() {
+	stack := newLinkedStack()
+	stack.Push(1)
+	stack.Push(2)
+	stack.Push(3)
+	stack.Push(4)
+	stack.Push(5)
+	stack.Show()
+
+	fmt.Printf("pop=%d\n", stack.Pop())
+	fmt.Printf("pop=%d\n", stack.Pop())
+}
+
+func testCircleLinkedList() {
+	list := newCircleLinkedList()
+	list.Add(2)
+	list.Add(3)
+	list.Add(4)
+	list.Add(5)
+	list.Add(6)
+	list.Show()
+	fmt.Printf("header:%d \n", list.header.data)
+	fmt.Printf("header previous:%d \n", list.header.previous.data)
+	fmt.Printf("header next:%d \n", list.header.next.data)
+	fmt.Printf("tail :%d \n", list.tail.data)
+	fmt.Printf("tail next:%d \n", list.tail.next.data)
+	fmt.Printf("tail previous:%d \n", list.tail.previous.data)
+
+	fmt.Println("\nrem!6666!ove!!!")
+	list.Remove(6)
+	list.Add(7)
+	list.Show()
+	fmt.Printf("header:%d \n", list.header.data)
+	fmt.Printf("header previous:%d \n", list.header.previous.data)
+	fmt.Printf("header next:%d \n", list.header.next.data)
+	fmt.Printf("\ntail :%d \n", list.tail.data)
+	fmt.Printf("tail next:%d \n", list.tail.next.data)
+	fmt.Printf("tail previous:%d \n", list.tail.previous.data)
+
+	fmt.Printf("\nrem22222ove \n")
+	list.Remove(2)
+	list.Add(10)
+	list.Show()
+	fmt.Printf("header:%d \n", list.header.data)
+	fmt.Printf("header previous:%d \n", list.header.previous.data)
+	fmt.Printf("header next:%d \n", list.header.next.data)
+	fmt.Printf("\ntail :%d \n", list.tail.data)
+	fmt.Printf("tail next:%d \n", list.tail.next.data)
+	fmt.Printf("tail previous:%d \n", list.tail.previous.data)
+
+	fmt.Printf("\nrem55555ove \n")
+	list.Remove(5)
+	list.Show()
+	fmt.Printf("header:%d \n", list.header.data)
+	fmt.Printf("header previous:%d \n", list.header.previous.data)
+	fmt.Printf("header next:%d \n", list.header.next.data)
+	fmt.Printf("\ntail :%d \n", list.tail.data)
+	fmt.Printf("tail next:%d \n", list.tail.next.data)
+	fmt.Printf("tail previous:%d \n", list.tail.previous.data)
+
+	fmt.Printf("\nrem--ve by index\n")
+	list.RemoveByIndex(1)
+	list.Show()
+	fmt.Printf("header:%d \n", list.header.data)
+	fmt.Printf("header previous:%d \n", list.header.previous.data)
+	fmt.Printf("header next:%d \n", list.header.next.data)
+	fmt.Printf("\ntail :%d \n", list.tail.data)
+	fmt.Printf("tail next:%d \n", list.tail.next.data)
+	fmt.Printf("tail previous:%d \n", list.tail.previous.data)
+
+	list.Add(33)
+	list.Add(55)
+	list.Show()
+
+	list.Remove(10)
+	list.Reverse()
+	fmt.Printf("\nreverse1 after-----\n")
+	list.Show()
+	fmt.Printf("header:%d \n", list.header.data)
+	fmt.Printf("header previous:%d \n", list.header.previous.data)
+	fmt.Printf("header next:%d \n", list.header.next.data)
+	fmt.Printf("\ntail :%d \n", list.tail.data)
+	fmt.Printf("tail next:%d \n", list.tail.next.data)
+	fmt.Printf("tail previous:%d \n", list.tail.previous.data)
+
+	list.Reverse()
+	fmt.Printf("\nreverse2 after-----\n")
+	list.Show()
+	fmt.Printf("header:%d \n", list.header.data)
+	fmt.Printf("header previous:%d \n", list.header.previous.data)
+	fmt.Printf("header next:%d \n", list.header.next.data)
+	fmt.Printf("\ntail :%d \n", list.tail.data)
+	fmt.Printf("tail next:%d \n", list.tail.next.data)
+	fmt.Printf("tail previous:%d \n", list.tail.previous.data)
+
+	fmt.Printf("\nadd all after-----\n")
+	linkedList := newCircleLinkedList()
+	linkedList.Add(99)
+	linkedList.Add(100)
+	linkedList.Add(88)
+	linkedList.Add(66)
+	linkedList.Add(77)
+	list.AddAll(linkedList)
+	list.Show()
+	fmt.Printf("header:%d \n", list.header.data)
+	fmt.Printf("header previous:%d \n", list.header.previous.data)
+	fmt.Printf("header next:%d \n", list.header.next.data)
+	fmt.Printf("\ntail :%d \n", list.tail.data)
+	fmt.Printf("tail next:%d \n", list.tail.next.data)
+	fmt.Printf("tail previous:%d \n", list.tail.previous.data)
+}
 func testSqList() {
 	list := newSqList(5)
 	list.Add(13)
@@ -267,13 +605,13 @@ func testSqList() {
 	list.Add(31)
 	list.Add(99)
 	list.Add(100)
-	list.show()
-	list.remove(22)
-	list.show()
+	list.Show()
+	list.Remove(22)
+	list.Show()
 
 	fmt.Println("removeByIndex")
-	list.removeByIndex(1)
-	list.show()
+	list.RemoveByIndex(1)
+	list.Show()
 	// list.Add(55)
 	// list.Add(66)
 	// list.show()
@@ -289,16 +627,16 @@ func testLinkedList() {
 	linkedList.Add(3)
 	linkedList.Add(4)
 	linkedList.Add(5)
-	linkedList.show()
+	linkedList.Show()
 	fmt.Printf("tail=%d\n", linkedList.tail.data)
 	fmt.Printf("header=%d\n", linkedList.header.data)
 
-	linkedList.remove(1)
-	linkedList.show()
+	linkedList.Remove(1)
+	linkedList.Show()
 	fmt.Printf("tail=%d\n", linkedList.tail.data)
 	fmt.Printf("header=%d\n", linkedList.header.data)
-	linkedList.remove(5)
-	linkedList.show()
+	linkedList.Remove(5)
+	linkedList.Show()
 	fmt.Printf("tail=%d\n", linkedList.tail.data)
 	fmt.Printf("header=%d\n", linkedList.header.data)
 	fmt.Println()
@@ -306,16 +644,34 @@ func testLinkedList() {
 	linkedList.Add(13)
 	linkedList.Add(14)
 	linkedList.Add(15)
-	linkedList.show()
+	linkedList.Show()
 
-	fmt.Printf("get %d data=%d\n", 0, linkedList.get(0))
-	data := linkedList.removeByIndex(0)
+	fmt.Printf("get %d data=%d\n", 0, linkedList.Get(0))
+	data := linkedList.RemoveByIndex(0)
 	fmt.Printf("remove data=%d header=%d size=%d \n", data, linkedList.header.data, linkedList.size)
-	linkedList.show()
+	linkedList.Show()
 
-	data = linkedList.removeByIndex(5)
+	data = linkedList.RemoveByIndex(5)
 	fmt.Printf("remove data=%d tail=%d size=%d \n", data, linkedList.tail.data, linkedList.size)
-	linkedList.show()
+	linkedList.Show()
 	linkedList.Add(999)
-	linkedList.show()
+	linkedList.Show()
+
+	fmt.Printf("reverse1\n")
+	linkedList.Reverse()
+	linkedList.Show()
+
+	fmt.Printf("reverse2\n")
+	linkedList.Reverse()
+	linkedList.Show()
+
+	fmt.Printf("\nafter add all-------------\n")
+	list := newLinkedList()
+	list.Add(100)
+	list.Add(99)
+	list.Add(88)
+	list.Add(77)
+	linkedList.AddAll(list)
+	linkedList.Show()
+	fmt.Printf("tail=%d\n", linkedList.tail.data)
 }
