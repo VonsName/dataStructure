@@ -1,4 +1,4 @@
-package main
+package queue
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ type CircleQueue struct {
 	size  int
 	front int
 	back  int
-	data  []int
+	data  []interface{}
 }
 
 func NewCircleQueue(initCap int) *CircleQueue {
@@ -18,12 +18,12 @@ func NewCircleQueue(initCap int) *CircleQueue {
 		size:  0,
 		front: 0,
 		back:  0,
-		data:  make([]int, initCap),
+		data:  make([]interface{}, initCap),
 	}
 	return queue
 }
 
-func (cq *CircleQueue) enQueue(d int) (err error) {
+func (cq *CircleQueue) EnQueue(d interface{}) (err error) {
 	if cq.size == len(cq.data) {
 		return fmt.Errorf("%s", errors.New("当前队列已满"))
 	}
@@ -33,7 +33,7 @@ func (cq *CircleQueue) enQueue(d int) (err error) {
 	return nil
 }
 
-func (cq *CircleQueue) deQueue() (int, error) {
+func (cq *CircleQueue) DeQueue() (interface{}, error) {
 	if cq.size == 0 {
 		return 0, fmt.Errorf("%s", errors.New("当前队列已空"))
 	}
@@ -43,55 +43,61 @@ func (cq *CircleQueue) deQueue() (int, error) {
 	return d, nil
 }
 
-func (cq *CircleQueue) show() {
+func (cq *CircleQueue) Size() int {
+	return cq.size
+}
+
+func (cq *CircleQueue) Show() {
 	index := cq.front
 	for i := 0; i < cq.size; i++ {
-		fmt.Printf("%d\n", cq.data[index])
+		fmt.Printf("%v\n", cq.data[index])
 		index = (index + 1) % len(cq.data)
 	}
+	fmt.Println()
 }
 
 func main() {
 
 	queue := NewCircleQueue(6)
-	err := queue.enQueue(1)
-	err = queue.enQueue(2)
-	err = queue.enQueue(3)
-	err = queue.enQueue(90)
-	err = queue.enQueue(100)
+	err := queue.EnQueue(1)
+	err = queue.EnQueue(2)
+	err = queue.EnQueue(3)
+	err = queue.EnQueue(90)
+	// err = queue.EnQueue(100)
+	err = queue.EnQueue("+")
 	if err != nil {
 		panic(err)
 	}
-	queue.show()
+	queue.Show()
 
-	err = queue.enQueue(6)
-	// err = queue.enQueue(7)
+	err = queue.EnQueue(6)
+	// err = queue.EnQueue(7)
 	//
+	// queue.Show()
+	// err = queue.EnQueue(77)
+	// err = queue.EnQueue(9)
+	// err = queue.EnQueue(10)
+	// err = queue.EnQueue(11)
+	// err = queue.EnQueue(12)
 	// queue.show()
-	// err = queue.enQueue(77)
-	// err = queue.enQueue(9)
-	// err = queue.enQueue(10)
-	// err = queue.enQueue(11)
-	// err = queue.enQueue(12)
-	// queue.show()
-	_, _ = queue.deQueue()
-	_, _ = queue.deQueue()
-	_ = queue.enQueue(90)
-	_ = queue.enQueue(56)
+	_, _ = queue.DeQueue()
+	_, _ = queue.DeQueue()
+	_ = queue.EnQueue(90)
+	_ = queue.EnQueue(56)
 	fmt.Printf("%s\n", "==================")
-	queue.show()
+	queue.Show()
 
-	_, _ = queue.deQueue()
-	_, _ = queue.deQueue()
+	_, _ = queue.DeQueue()
+	_, _ = queue.DeQueue()
 	fmt.Printf("%s\n", "==================")
-	queue.show()
-	_, _ = queue.deQueue()
-	_, _ = queue.deQueue()
-	_, _ = queue.deQueue()
-	_, _ = queue.deQueue()
+	queue.Show()
+	_, _ = queue.DeQueue()
+	_, _ = queue.DeQueue()
+	_, _ = queue.DeQueue()
+	_, _ = queue.DeQueue()
 	if err != nil {
 		panic(err)
 	}
 	fmt.Printf("%s\n", "==================")
-	queue.show()
+	queue.Show()
 }

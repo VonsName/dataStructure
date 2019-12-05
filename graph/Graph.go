@@ -80,13 +80,13 @@ func (g *Graph) dfs1(startVertex int, ma []bool) {
 		panic("index out bounds of vertexList")
 	}
 	fmt.Printf("%s ", g.vertexList[startVertex])
-	//标记为已经访问
+	// 标记为已经访问
 	ma[startVertex] = true
 
 	neighbor := g.getFirstNeighbor(startVertex)
-	//存在一条边
+	// 存在一条边
 	for neighbor != -1 {
-		//没有被访问过
+		// 没有被访问过
 		if !ma[neighbor] {
 			g.dfs1(neighbor, ma)
 		}

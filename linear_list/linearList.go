@@ -1,7 +1,9 @@
 package main
 
 import (
+	"dataStructure/queue"
 	"fmt"
+	"strconv"
 )
 
 type MList interface {
@@ -102,7 +104,7 @@ func (list *SqList) Show() {
 }
 
 type Node struct {
-	data     int
+	data     interface{}
 	next     *Node
 	previous *Node
 }
@@ -202,7 +204,7 @@ func (list *LinkedList) Get(index int) int {
 		node = node.next
 	}
 	if node != nil {
-		return node.data
+		return node.data.(int)
 	}
 	panic("outbound of index")
 }
@@ -216,12 +218,12 @@ func (list *LinkedList) RemoveByIndex(index int) (data int) {
 		node = node.next
 	}
 	if node == list.header {
-		data = list.header.data
+		data = list.header.data.(int)
 		list.header = list.header.next
 		list.size--
 		return
 	} else {
-		data = node.next.data
+		data = node.next.data.(int)
 		if node.next == list.tail {
 			list.tail = node
 		}
@@ -394,7 +396,7 @@ func (list *CircleBothWayLinkedList) RemoveByIndex(index int) int {
 		node = node.next
 	}
 	deletes(node, list)
-	return node.data
+	return node.data.(int)
 }
 func (list *CircleBothWayLinkedList) Clear() {
 	initCircleLinkedList(list)
@@ -407,7 +409,7 @@ func (list *CircleBothWayLinkedList) Get(index int) int {
 	for i := 0; i < index; i++ {
 		node = node.next
 	}
-	return node.data
+	return node.data.(int)
 }
 
 func (list *CircleBothWayLinkedList) Reverse() {
@@ -444,10 +446,18 @@ func newLinkedStack() *LinkedStack {
 	}}
 }
 
-func (stack *LinkedStack) Push(data int) {
+func (stack *LinkedStack) Push(data interface{}) {
 
 	if stack.size == 0 {
-		stack.top.data = data
+		if stack.top != nil {
+			stack.top.data = data
+		} else {
+			stack.top = &Node{
+				data:     data,
+				next:     nil,
+				previous: nil,
+			}
+		}
 	} else {
 		newNode := &Node{
 			data:     data,
@@ -460,31 +470,168 @@ func (stack *LinkedStack) Push(data int) {
 	stack.size++
 }
 
-func (stack *LinkedStack) Pop() int {
+func (stack *LinkedStack) Pop() *Node {
 	if stack.size == 0 {
 		panic("stack is empty")
 	}
 	node := stack.top
 	stack.top = stack.top.next
 	stack.size--
-	return node.data
+	return node
 }
 
 func (stack *LinkedStack) Show() {
 
 	node := stack.top
 	for node != nil {
-		fmt.Printf("%d ", node.data)
+		fmt.Printf("%v ", node.data)
 		node = node.next
 	}
 	fmt.Println()
+}
+
+func (stack *LinkedStack) IsEmpty() (empty bool) {
+	return stack.size == 0
+}
+
+// 9 + ( 3 - 1 ) * 3 + 10 / 2
+// "((9 + ( 3 - 1 ))* 3 + 6) / 2"
+// 中缀表达式转为后缀表达式
+func generateSuffixExpression(str string) (expression string) {
+	stack := newLinkedStack()
+	circleQueue := queue.NewCircleQueue(len(str))
+	for _, v := range str {
+		if string(v) == " " {
+			continue
+		}
+		if isExpress(string(v)) {
+			if string(v) == "(" {
+				stack.Push(string(v))
+			} else if string(v) == ")" {
+				pop := stack.Pop()
+				for pop.data.(string) != "(" {
+					if err := circleQueue.EnQueue(pop.data); err != nil {
+						panic(err)
+					}
+					pop = stack.Pop()
+				}
+			} else {
+				if stack.IsEmpty() {
+					stack.Push(string(v))
+				} else {
+					data := stack.top.data
+					// 区别对待 (
+					if data.(string) == "(" {
+						stack.Push(string(v))
+					} else {
+						// 当前元素的优先级低于栈顶的元素的优先级,弹出并输出所有元素,然后将当前元素入栈
+						if getPriority(string(v)) < getPriority(data.(string)) {
+							data = stack.Pop().data
+							for getPriority(string(v)) < getPriority(data.(string)) {
+								if err := circleQueue.EnQueue(data.(string)); err != nil {
+									panic(err)
+								}
+								if stack.top.data.(string) == "(" {
+									break
+								}
+								data = stack.Pop().data
+							}
+							stack.Push(string(v))
+						} else { // 高于,直接入栈
+							stack.Push(string(v))
+						}
+					}
+				}
+			}
+		} else {
+			if err := circleQueue.EnQueue(string(v)); err != nil {
+				panic(err)
+			}
+		}
+	}
+	for !stack.IsEmpty() {
+		if err := circleQueue.EnQueue(stack.Pop().data.(string)); err != nil {
+			panic(err)
+		}
+	}
+	circleQueue.Show()
+	for circleQueue.Size() != 0 {
+		deQueue, _ := circleQueue.DeQueue()
+		expression += fmt.Sprintf("%s", deQueue)
+	}
+	return
+}
+
+// 计算后缀表达式
+func calculateSuffixExpression(expression string) int {
+	stack := newLinkedStack()
+	for _, v := range expression {
+		if isExpress(string(v)) {
+			pop1, _ := strconv.Atoi(stack.Pop().data.(string))
+			pop2, _ := strconv.Atoi(stack.Pop().data.(string))
+			s := string(v)
+			switch s {
+			case "*":
+				stack.Push(strconv.Itoa(pop2 * pop1))
+			case "/":
+				stack.Push(strconv.Itoa(pop2 / pop1))
+			case "+":
+				stack.Push(strconv.Itoa(pop2 + pop1))
+			case "-":
+				stack.Push(strconv.Itoa(pop2 - pop1))
+			default:
+				panic("invalid expression error")
+			}
+		} else {
+			stack.Push(string(v))
+		}
+	}
+	if i2, ok := stack.Pop().data.(string); ok {
+		i, _ := strconv.Atoi(i2)
+		return i
+	} else {
+		panic("Atoi error")
+	}
+}
+
+func isExpress(c string) (ok bool) {
+
+	switch c {
+	case "+", "-", "*", "/", "(", ")":
+		return true
+	}
+	return false
+}
+
+func getPriority(b string) int {
+	switch b {
+	case "+", "-":
+		return 0
+	case "*", "/":
+		return 1
+	case "(":
+		return 2
+	default:
+		panic("express error")
+	}
 }
 
 func main() {
 	// testSqList()
 	// testLinkedList()
 	// testCircleLinkedList()
-	testLinkedStack()
+	// testLinkedStack()
+	testSuffix()
+
+}
+
+func testSuffix() {
+	str := "((9 + ( 3 - 1 ))* 3 + 6) / 2"
+	expression := generateSuffixExpression(str)
+	fmt.Printf("expression=%s\n", expression)
+
+	suffixExpression := calculateSuffixExpression(expression)
+	fmt.Printf("result=%d \n", suffixExpression)
 }
 
 func testLinkedStack() {
@@ -494,13 +641,15 @@ func testLinkedStack() {
 	stack.Push(3)
 	stack.Push(4)
 	stack.Push(5)
+	stack.Push("*")
 	stack.Show()
 
-	fmt.Printf("pop=%d\n", stack.Pop())
-	fmt.Printf("pop=%d\n", stack.Pop())
+	fmt.Printf("pop=%v\n", stack.Pop().data)
+	fmt.Printf("pop=%v\n", stack.Pop().data)
 }
 
 func testCircleLinkedList() {
+
 	list := newCircleLinkedList()
 	list.Add(2)
 	list.Add(3)
