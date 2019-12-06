@@ -1,4 +1,4 @@
-package main
+package linear_list
 
 import (
 	"dataStructure/queue"
@@ -438,7 +438,7 @@ type LinkedStack struct {
 	size int
 }
 
-func newLinkedStack() *LinkedStack {
+func NewLinkedStack() *LinkedStack {
 	return &LinkedStack{top: &Node{
 		data:     0,
 		next:     nil,
@@ -498,7 +498,7 @@ func (stack *LinkedStack) IsEmpty() (empty bool) {
 // "((9 + ( 3 - 1 ))* 3 + 6) / 2"
 // 中缀表达式转为后缀表达式
 func generateSuffixExpression(str string) (expression string) {
-	stack := newLinkedStack()
+	stack := NewLinkedStack()
 	circleQueue := queue.NewCircleQueue(len(str))
 	for _, v := range str {
 		if string(v) == " " {
@@ -564,7 +564,7 @@ func generateSuffixExpression(str string) (expression string) {
 
 // 计算后缀表达式
 func calculateSuffixExpression(expression string) int {
-	stack := newLinkedStack()
+	stack := NewLinkedStack()
 	for _, v := range expression {
 		if isExpress(string(v)) {
 			pop1, _ := strconv.Atoi(stack.Pop().data.(string))
@@ -635,7 +635,7 @@ func testSuffix() {
 }
 
 func testLinkedStack() {
-	stack := newLinkedStack()
+	stack := NewLinkedStack()
 	stack.Push(1)
 	stack.Push(2)
 	stack.Push(3)

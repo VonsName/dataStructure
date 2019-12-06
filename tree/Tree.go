@@ -115,6 +115,7 @@ func isNumber(c string) (matched bool) {
 	return matched
 }
 
+// 搜索二叉树
 func (root *TreeNode) add(data int) *TreeNode {
 	if root == nil {
 		return &TreeNode{
@@ -208,6 +209,34 @@ func (root *TreeNode) height() int {
 		return -1
 	}
 	return int(1 + math.Max(float64(root.left.height()), float64(root.right.height())))
+}
+
+type ChildNode struct {
+	child int        // 在数组中的下标
+	next  *ChildNode // 下一个
+}
+
+type PanNode struct {
+	data       int        // 数据域
+	firstChild *ChildNode // 第一个孩子
+}
+
+type CTree struct {
+	nodes     []PanNode
+	nodeNum   int // 树中节点的数量
+	rootIndex int // 树中根节点在数组中的位置
+}
+
+func NewCTree(initCap int) *CTree {
+	return &CTree{
+		nodes:     make([]PanNode, initCap),
+		nodeNum:   0,
+		rootIndex: 0,
+	}
+}
+
+func (tree *CTree) Add(data int) {
+
 }
 
 func main() {
