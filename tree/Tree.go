@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"regexp"
+	"sort"
+	"time"
 )
 
 type Stack struct {
@@ -95,6 +98,73 @@ func middleOrderTraversal(tree *TreeNode) {
 	fmt.Printf("node=%v ", tree.data)
 	if tree.right != nil {
 		middleOrderTraversal(tree.right)
+	}
+}
+
+const n = 100
+const m = 2*n - 1
+
+type HNode struct {
+	weight int
+	lChild int
+	rChild int
+	parent int
+}
+type HuffmanTree [m]*HNode
+
+func NewHuffmanTree() (huffmanTree HuffmanTree) {
+
+	huffmanTree = HuffmanTree{}
+	for i := 0; i < len(huffmanTree); i++ {
+		rand.Seed(time.Now().UnixNano())
+
+		huffmanTree[i] = &HNode{
+			weight: 0,
+			lChild: 0,
+			rChild: 0,
+			parent: 0,
+		}
+	}
+	initWeight(&huffmanTree)
+	return
+}
+func (tree *HuffmanTree) Len() int {
+	return len(tree)
+}
+
+func (tree *HuffmanTree) Less(i int, j int) bool {
+	if tree[j].weight < tree[i].weight {
+		return true
+	}
+	return false
+}
+
+func (tree *HuffmanTree) Swap(i int, j int) {
+	temp := tree[i]
+	tree[i].weight = tree[j].weight
+	tree[j].weight = temp.weight
+}
+func initWeight(tree *HuffmanTree) {
+	if tree == nil {
+		return
+	}
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < n; i++ {
+		tree[i].weight = rand.Intn(100)
+	}
+	sort.Sort(tree)
+}
+
+func select2MinWeight(k int) {
+
+	for i := 0; i < k; i++ {
+
+	}
+}
+func testHuffmanTree() {
+	huffmanTree := NewHuffmanTree()
+	for k, v := range huffmanTree {
+		fmt.Printf("k=%d v=%v\n", k, v)
 	}
 }
 
@@ -211,6 +281,7 @@ func (root *TreeNode) height() int {
 	return int(1 + math.Max(float64(root.left.height()), float64(root.right.height())))
 }
 
+// 树的孩子链表表示法
 type ChildNode struct {
 	child int        // 在数组中的下标
 	next  *ChildNode // 下一个
@@ -227,6 +298,8 @@ type CTree struct {
 	rootIndex int // 树中根节点在数组中的位置
 }
 
+// 树的孩子链表表示法
+
 func NewCTree(initCap int) *CTree {
 	return &CTree{
 		nodes:     make([]PanNode, initCap),
@@ -240,28 +313,30 @@ func (tree *CTree) Add(data int) {
 }
 
 func main() {
-	root := &TreeNode{
-		data:  8,
-		left:  nil,
-		right: nil,
-	}
-	root.add(5)
-	root.add(15)
-	root.add(3)
-	root.add(7)
-	root.add(1)
-	root.add(11)
-	root.add(23)
-	root.add(9)
-	root.add(20)
-	root.add(21)
 
-	postOrderTraversal(root)
-	println()
-	preOrderTraversal(root)
-	println()
-	middleOrderTraversal(root)
-	println()
+	testHuffmanTree()
+	// root := &TreeNode{
+	// 	data:  8,
+	// 	left:  nil,
+	// 	right: nil,
+	// }
+	// root.add(5)
+	// root.add(15)
+	// root.add(3)
+	// root.add(7)
+	// root.add(1)
+	// root.add(11)
+	// root.add(23)
+	// root.add(9)
+	// root.add(20)
+	// root.add(21)
+	//
+	// postOrderTraversal(root)
+	// println()
+	// preOrderTraversal(root)
+	// println()
+	// middleOrderTraversal(root)
+	// println()
 	// node, contain := root.contains(5)
 	// fmt.Printf("%d contains of = %v\n", 5, contain)
 	// if contain {
@@ -285,17 +360,17 @@ func main() {
 	// fmt.Printf("Max =%v \n", data.data)
 	// fmt.Printf("%d.parent=%d\n", data.data, data.parent.data)
 
-	println("remove====================")
-	targetNode := root.remove(root, 15)
-	middleOrderTraversal(targetNode)
-
-	println()
-	node, contain := root.contains(21)
-	if contain && node.parent != nil {
-		fmt.Printf("%d.parent=%d", node.data, node.parent.data)
-	}
-
-	println()
-	height := root.height()
-	fmt.Printf("height %d \n", height)
+	// println("remove====================")
+	// targetNode := root.remove(root, 15)
+	// middleOrderTraversal(targetNode)
+	//
+	// println()
+	// node, contain := root.contains(21)
+	// if contain && node.parent != nil {
+	// 	fmt.Printf("%d.parent=%d", node.data, node.parent.data)
+	// }
+	//
+	// println()
+	// height := root.height()
+	// fmt.Printf("height %d \n", height)
 }
