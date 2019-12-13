@@ -47,6 +47,10 @@ func (cq *CircleQueue) Size() int {
 	return cq.size
 }
 
+func (cq *CircleQueue) IsEmpty() bool {
+	return cq.size == 0
+}
+
 func (cq *CircleQueue) Show() {
 	index := cq.front
 	for i := 0; i < cq.size; i++ {

@@ -1,11 +1,11 @@
-package main
+package tree
 
 import (
+	"dataStructure/queue"
 	"fmt"
 	"math"
 	"math/rand"
 	"regexp"
-	"sort"
 	"time"
 )
 
@@ -22,12 +22,12 @@ func NewStack() (stack *Stack) {
 	return
 }
 
-func (s *Stack) push(data interface{}) {
+func (s *Stack) Push(data interface{}) {
 	s.top++
 	s.data = append(s.data, data)
 }
 
-func (s *Stack) pop() (data interface{}) {
+func (s *Stack) Pop() (data interface{}) {
 	if s.top == -1 {
 		return
 	}
@@ -36,13 +36,17 @@ func (s *Stack) pop() (data interface{}) {
 	return
 }
 
-func (s *Stack) show() {
+func (s *Stack) Show() {
 	i := s.top
 	for i != -1 {
 		fmt.Printf("%v ", s.data[i])
 		i--
 	}
 	fmt.Println()
+}
+
+func (s *Stack) IsEmpty() bool {
+	return s.top == -1
 }
 
 type TreeNode struct {
@@ -92,12 +96,33 @@ func middleOrderTraversal(tree *TreeNode) {
 	if tree == nil {
 		return
 	}
-	if tree.left != nil {
-		middleOrderTraversal(tree.left)
-	}
+	middleOrderTraversal(tree.left)
 	fmt.Printf("node=%v ", tree.data)
-	if tree.right != nil {
-		middleOrderTraversal(tree.right)
+	middleOrderTraversal(tree.right)
+}
+
+/**
+层级遍历
+*/
+func tierOrderTraversal(tree *TreeNode) {
+	if tree == nil {
+		return
+	}
+	circleQueue := queue.NewCircleQueue(20)
+	_ = circleQueue.EnQueue(tree)
+	for !circleQueue.IsEmpty() {
+		deQueue, _ := circleQueue.DeQueue()
+		node := deQueue.(*TreeNode)
+		fmt.Printf("node=%v ", node.data)
+		if node.left != nil {
+			left := node.left
+			_ = circleQueue.EnQueue(left)
+		}
+
+		if node.right != nil {
+			right := node.right
+			_ = circleQueue.EnQueue(right)
+		}
 	}
 }
 
@@ -112,12 +137,16 @@ type HNode struct {
 }
 type HuffmanTree [m]*HNode
 
+// HuffmanTree构造步骤
+// 1.根据与n个权值(w1,w2...)对应的n个节点构成的只有根节点的二叉树集合F(t1,t2,...)
+// 2.创建一个只有根节点的新树,从F中选取根节点权值最小的2棵树作为新树的左右孩子,并将这2个节点的权值之和作为新树的权值
+// 3.将新树加入F,从F中删除上面选取的2棵树
+// 4.重复23直到F中只有一棵树为止,这棵树就是Huffman树
+// 总共需合并n-1次,且产生n-1个新的节点
 func NewHuffmanTree() (huffmanTree HuffmanTree) {
 
 	huffmanTree = HuffmanTree{}
 	for i := 0; i < len(huffmanTree); i++ {
-		rand.Seed(time.Now().UnixNano())
-
 		huffmanTree[i] = &HNode{
 			weight: 0,
 			lChild: 0,
@@ -149,17 +178,45 @@ func initWeight(tree *HuffmanTree) {
 		return
 	}
 	rand.Seed(time.Now().UnixNano())
-	for i := 0; i < n; i++ {
+	// 初始化节点的权值
+	for i := 1; i <= n; i++ {
 		tree[i].weight = rand.Intn(100)
+
 	}
-	sort.Sort(tree)
+	// 以及构造Huffman 需要将原来的n个节点进行合并,需要n-1次合并,产生n-1个新节点
+	for i := n + 1; i <= m; i++ {
+		// 从n个只有根的二叉树节点中选择2个权值最小的
+		minimum, nextMinimum := select2MinWeight(tree, n)
+		// 将新节点设置为上面选取的2个节点的父节点
+		tree[minimum].parent = i
+		tree[nextMinimum].parent = i
+		// 将上面选取的2个节点分别设置为新节点的左孩子以及右孩子
+		tree[i].lChild = minimum
+		tree[i].rChild = nextMinimum
+		// 将上面选取的2个节点分别的权值之和作为新节点的权值
+		tree[i].weight = tree[minimum].weight + tree[nextMinimum].weight
+	}
+	// sort.Sort(tree)
 }
 
-func select2MinWeight(k int) {
-
-	for i := 0; i < k; i++ {
-
+// 选择最小的以及第二小的2个节点
+func select2MinWeight(tree *HuffmanTree, k int) (minimum int, nextMinimum int) {
+	min := tree[0].weight
+	for i := 1; i < k; i++ {
+		if tree[i].weight < min && tree[i].parent == 0 {
+			min = tree[i].weight
+			minimum = i
+		}
 	}
+
+	min = tree[0].weight
+	for i := 0; i < k && i != minimum && tree[i].parent == 0; i++ {
+		if tree[i].weight < min {
+			min = tree[i].weight
+			nextMinimum = i
+		}
+	}
+	return
 }
 func testHuffmanTree() {
 	huffmanTree := NewHuffmanTree()
@@ -314,29 +371,31 @@ func (tree *CTree) Add(data int) {
 
 func main() {
 
-	testHuffmanTree()
-	// root := &TreeNode{
-	// 	data:  8,
-	// 	left:  nil,
-	// 	right: nil,
-	// }
-	// root.add(5)
-	// root.add(15)
-	// root.add(3)
-	// root.add(7)
-	// root.add(1)
-	// root.add(11)
-	// root.add(23)
-	// root.add(9)
-	// root.add(20)
-	// root.add(21)
-	//
-	// postOrderTraversal(root)
-	// println()
-	// preOrderTraversal(root)
-	// println()
-	// middleOrderTraversal(root)
-	// println()
+	// testHuffmanTree()
+	root := &TreeNode{
+		data:  8,
+		left:  nil,
+		right: nil,
+	}
+	root.add(5)
+	root.add(15)
+	root.add(3)
+	root.add(7)
+	root.add(1)
+	root.add(11)
+	root.add(23)
+	root.add(9)
+	root.add(20)
+	root.add(21)
+
+	fmt.Printf("postOrderTraversal\n")
+	postOrderTraversal(root)
+	fmt.Printf("\npreOrderTraversal\n")
+	preOrderTraversal(root)
+	fmt.Printf("\nmiddleOrderTraversal\n")
+	middleOrderTraversal(root)
+	fmt.Printf("\ntierOrderTraversal\n")
+	tierOrderTraversal(root)
 	// node, contain := root.contains(5)
 	// fmt.Printf("%d contains of = %v\n", 5, contain)
 	// if contain {
