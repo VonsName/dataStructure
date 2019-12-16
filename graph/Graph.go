@@ -384,6 +384,7 @@ func buildMinimumSpanningTree(g *Graph) [][]int {
 		}
 		uV = append(uV[:index], uV[index+1:]...)
 	}
+	fmt.Printf("最小生成树的顶点信息%v\n", tv)
 	return minimumSpanningTree
 }
 
