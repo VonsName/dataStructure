@@ -5,7 +5,9 @@ import (
 	"dataStructure/linear_list"
 	"dataStructure/queue"
 	"fmt"
+	"math/rand"
 	"strconv"
+	"time"
 )
 
 type Graph struct {
@@ -15,7 +17,7 @@ type Graph struct {
 	visited    []bool   // 是否访问
 }
 
-//
+// 无向图的邻接表 表示
 type EdgeNode struct {
 	adjvex int       // 与当前节点相邻的顶点的在数组中的位置
 	next   *EdgeNode // 下一个相邻的顶点
@@ -271,7 +273,7 @@ func (g *Graph) Bfs() {
 }
 
 /**
-矩阵DFS非递归实现
+邻接矩阵DFS非递归实现
 */
 func (g *Graph) DfsOfNoRecursionWithMatrix(i int) {
 	if i < 0 || i >= len(g.vertexList) {
@@ -280,14 +282,14 @@ func (g *Graph) DfsOfNoRecursionWithMatrix(i int) {
 	stack := linear_list.NewLinkedStack()
 	circleQueue := queue.NewCircleQueue(len(g.vertexList))
 	fmt.Printf("%s ", g.vertexList[i])
-	stack.Push(i)
-	_ = circleQueue.EnQueue(i)
+	stack.Push(i)              // 存储已经访问用来回溯的顶点
+	_ = circleQueue.EnQueue(i) // 存储已经访问的顶点
 	g.visited[i] = true
 	for !circleQueue.IsEmpty() {
 		data, _ := circleQueue.DeQueue()
 		k := data.(int)
 		for j := 0; j < len(g.vertexList); j++ {
-			if g.edges[k][j] == 1 {
+			if g.edges[k][j] != 0 {
 				if !g.visited[j] {
 					fmt.Printf("%s ", g.vertexList[j])
 					stack.Push(j)
@@ -302,7 +304,7 @@ func (g *Graph) DfsOfNoRecursionWithMatrix(i int) {
 			for !stack.IsEmpty() {
 				k = stack.Pop().Data.(int)
 				for j := 0; j < len(g.vertexList); j++ {
-					if g.edges[k][j] == 1 {
+					if g.edges[k][j] != 0 {
 						if !g.visited[j] {
 							fmt.Printf("%s ", g.vertexList[j])
 							_ = circleQueue.EnQueue(j)
@@ -325,7 +327,7 @@ func (g UnDirectedGraph) DfsOfNoRecursionWithAdj(i int) {
 	}
 	fmt.Printf("%s ", g[i].vertex)
 	g[i].visited = true
-	stack := linear_list.NewLinkedStack()
+	stack := linear_list.NewLinkedStack() // 存储已经访问过的顶点,用来回溯
 	node := g[i].firstLink
 	stack.Push(node)
 	for !stack.IsEmpty() || node != nil {
@@ -338,22 +340,84 @@ func (g UnDirectedGraph) DfsOfNoRecursionWithAdj(i int) {
 				node = g[node.adjvex].firstLink
 				stack.Push(node)
 			}
-			if !stack.IsEmpty() {
-				node = stack.Pop().Data.(*EdgeNode)
-				node = node.next
-			}
+		}
+		if !stack.IsEmpty() {
+			node = stack.Pop().Data.(*EdgeNode)
+			node = node.next
 		}
 	}
 }
 
+/**
+从已知连通图构建最小生成树
+ 	g-已知图的顶点集合
+	fromGraph-顶点之间的关系(边)
+	t-最小生成树的顶点集合,初始为空
+	minimumSpanningTree-最小生成树()
+*/
+func buildMinimumSpanningTree(g *Graph) [][]int {
+	// 原图的顶点信息
+	uV := make([]int, len(g.vertexList))
+	for k := range g.vertexList {
+		uV[k] = k
+	}
+	// 最小生成树的顶点信息
+	var tv []int
+	// 生成的目标最小生成树
+	minimumSpanningTree := make([][]int, len(g.edges))
+	for i := 0; i < len(g.edges); i++ {
+		minimumSpanningTree[i] = make([]int, len(g.edges[i]))
+	}
+	tv = append(tv, uV[0])
+	uV = append(uV[1:])
+	l := len(uV)
+	for i := 0; i < l; i++ {
+		minT, minU, weight := selectMinimumWeight(uV, tv, g)
+		minimumSpanningTree[minT][minU] = weight
+		tv = append(tv, minU)
+		index := 0
+		for k, v := range uV {
+			if v == minU {
+				index = k
+				break
+			}
+		}
+		uV = append(uV[:index], uV[index+1:]...)
+	}
+	return minimumSpanningTree
+}
+
+func selectMinimumWeight(uV []int, tv []int, g *Graph) (minT int, minU int, weight int) {
+	minWeight := 100
+	for j := 0; j < len(tv); j++ {
+		t := tv[j]
+		for k := 0; k < len(uV); k++ {
+			u := uV[k]
+			if g.edges[t][u] != 0 && g.edges[t][u] < minWeight {
+				minWeight = g.edges[t][u]
+				minU = u
+				minT = t
+			}
+		}
+	}
+	return minT, minU, minWeight
+}
+
 func main() {
-	// graph := NewGraph(8)
-	// buildGraph(graph)
+	graph := NewGraph(6)
+	buildGraph(graph)
 	// fmt.Println("深度优先===================")
 	// graph.DfsOfNoRecursionWithMatrix(0)
 	// fmt.Println()
 	// ma := []bool{false, false, false, false, false, false, false, false}
 	// graph.dfs(ma)
+
+	tree := buildMinimumSpanningTree(graph)
+	fmt.Println()
+	for _, v := range tree {
+		fmt.Printf("%v\n", v)
+	}
+
 	// fmt.Println("\n广度优先===================")
 	// for i := 0; i < len(graph.vertexList); i++ {
 	// 	graph.visited[i] = false
@@ -363,8 +427,8 @@ func main() {
 	// fmt.Println()
 	// graph.bfs(ma)
 
-	graph := CreateUnDirectedGraph(5, 6)
-	graph.DfsOfNoRecursionWithAdj(0)
+	// graph := CreateUnDirectedGraph(4, 5)
+	// graph.DfsOfNoRecursionWithAdj(0)
 }
 
 func buildGraph(graph *Graph) {
@@ -375,25 +439,21 @@ func buildGraph(graph *Graph) {
 	graph.AddVertex("4")
 	graph.AddVertex("5")
 	graph.AddVertex("6")
-	graph.AddVertex("7")
-	graph.AddVertex("8")
 
-	graph.AddEdges(0, 1, 1)
+	rand.Seed(time.Now().UnixNano())
+	graph.AddEdges(0, 1, 6)
 	graph.AddEdges(0, 2, 1)
-	graph.AddEdges(1, 3, 1)
-	graph.AddEdges(1, 4, 1)
-	graph.AddEdges(3, 7, 1)
-	graph.AddEdges(4, 7, 1)
-	graph.AddEdges(2, 5, 1)
-	graph.AddEdges(2, 6, 1)
-	graph.AddEdges(5, 6, 1)
+	graph.AddEdges(0, 3, 5)
+	graph.AddEdges(1, 2, 5)
+	graph.AddEdges(1, 4, 3)
+	graph.AddEdges(2, 4, 6)
+	graph.AddEdges(2, 3, 5)
+	graph.AddEdges(2, 5, 4)
+	graph.AddEdges(4, 5, 6)
 	// 1 2 4 8 5 3 6 7
 	// 1 2 4 8 5 3 6 7
 
-	graph.AddEdges(2, 3, 1)
-	graph.AddEdges(4, 3, 1)
-	graph.AddEdges(3, 5, 1)
-	// 1 2 4 3 6 7 5 8
+	graph.AddEdges(3, 5, 2)
 	// 1 2 4 3 6 7 5 8
 
 	graph.ShowGraph()
