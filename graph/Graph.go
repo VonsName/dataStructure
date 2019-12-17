@@ -350,10 +350,16 @@ func (g UnDirectedGraph) DfsOfNoRecursionWithAdj(i int) {
 
 /**
 从已知连通图构建最小生成树
+Prim算法
  	g-已知图的顶点集合
 	fromGraph-顶点之间的关系(边)
 	t-最小生成树的顶点集合,初始为空
 	minimumSpanningTree-最小生成树()
+	g(uV,e) t(tV,e)
+	1.初始化的图的顶点信息uV,tV初始为空
+	2.从uV中选择一个顶点加入到tV中,并从uV中删除这个顶点
+	3.寻找一条最小权重的边(ti,ui)->ui=(uV-tV),并将ui加入tV,边(ti,ui)加入t,从uV中删除ui
+	4.重复3直到uV中的顶点为空,此时所有的边组成的就是最小生成树
 */
 func buildMinimumSpanningTree(g *Graph) [][]int {
 	// 原图的顶点信息
@@ -362,32 +368,42 @@ func buildMinimumSpanningTree(g *Graph) [][]int {
 		uV[k] = k
 	}
 	// 最小生成树的顶点信息
-	var tv []int
+	var tV []int
 	// 生成的目标最小生成树
 	minimumSpanningTree := make([][]int, len(g.edges))
 	for i := 0; i < len(g.edges); i++ {
 		minimumSpanningTree[i] = make([]int, len(g.edges[i]))
 	}
-	tv = append(tv, uV[0])
+	tV = append(tV, uV[0])
 	uV = append(uV[1:])
 	l := len(uV)
 	for i := 0; i < l; i++ {
-		minT, minU, weight := selectMinimumWeight(uV, tv, g)
+		// 搜索权重最小的边(t,u),并将顶点u加入tv,从uV中删除顶点u
+		minT, minU, weight := selectMinimumWeight(uV, tV, g)
 		minimumSpanningTree[minT][minU] = weight
-		tv = append(tv, minU)
-		index := 0
-		for k, v := range uV {
-			if v == minU {
-				index = k
-				break
-			}
-		}
+		tV = append(tV, minU)
+		index := selectIndex(minU, uV)
 		uV = append(uV[:index], uV[index+1:]...)
 	}
-	fmt.Printf("最小生成树的顶点信息%v\n", tv)
+	fmt.Printf("最小生成树的顶点信息%v\n", tV)
 	return minimumSpanningTree
 }
 
+func selectIndex(minU int, uV []int) int {
+	index := 0
+	for k, v := range uV {
+		if v == minU {
+			index = k
+			break
+		}
+	}
+	return index
+}
+
+/**
+寻找权重最小的边
+ (t,u)
+*/
 func selectMinimumWeight(uV []int, tv []int, g *Graph) (minT int, minU int, weight int) {
 	minWeight := 100
 	for j := 0; j < len(tv); j++ {
@@ -403,6 +419,69 @@ func selectMinimumWeight(uV []int, tv []int, g *Graph) (minT int, minU int, weig
 	}
 	return minT, minU, minWeight
 }
+
+/**
+迪杰斯特拉算法 求源点v1到其他n-1个顶点的最短路径
+*/
+const maxDistance = 32657 // 用来表示如果2个顶点之间没有路径时候的权值
+func dijkstra(graph Graph, v1 int) {
+	distance := make([]int, len(graph.vertexList)) // 源点到顶点的路径长度
+	path := make([]int, len(graph.vertexList))     // 顶点的前置端点 例p[1]=0 表示顶点1的前置端点是0 p[5]=4表示顶点5的前置端点为4  // p[5]=3表示顶点5的前置端点为3
+	s := make([]bool, len(graph.vertexList))       // 存储顶点是否已经求得最短路径
+
+	// 初始化d,s,p
+	for i := 0; i < len(graph.edges); i++ {
+		s[i] = false
+		if graph.edges[v1][i] != 0 {
+			path[i] = v1
+			distance[i] = graph.edges[v1][i]
+		} else {
+			path[i] = -1
+			distance[i] = maxDistance
+		}
+	}
+	path[v1] = -1 // v1的前置顶点为-1
+	s[v1] = true
+	v, w := -1, -1
+	for i := 1; i < len(graph.edges); i++ {
+		minW := maxDistance
+		for w = 0; w < len(graph.edges); w++ {
+			if !s[w] && distance[w] < minW {
+				v = w
+				minW = distance[w]
+			}
+		}
+		s[v] = true
+		for w = 0; w < len(graph.edges); w++ {
+			if !s[w] && distance[v]+graph.edges[v][w] < distance[w] {
+				distance[w] = distance[v] + graph.edges[v][w]
+				path[w] = v
+			}
+		}
+	}
+	fmt.Printf("%v\n", path)
+}
+
+/** =================================
+边集数组
+*/
+type Edge struct {
+	begin  int // 边起点在数组中的下标
+	end    int // 边终点在数组中的下标
+	weight int // 边的权重
+}
+
+type EdgeArr []Edge
+
+func newEdgeArr(cap int) EdgeArr {
+	arr := make(EdgeArr, cap)
+	arr[0].begin = 4
+	arr[0].end = 7
+	arr[0].weight = 7
+	return arr
+}
+
+// =========================
 
 func main() {
 	graph := NewGraph(6)
