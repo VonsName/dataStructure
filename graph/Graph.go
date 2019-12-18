@@ -5,9 +5,8 @@ import (
 	"dataStructure/linear_list"
 	"dataStructure/queue"
 	"fmt"
-	"math/rand"
+	"sort"
 	"strconv"
-	"time"
 )
 
 type Graph struct {
@@ -79,11 +78,19 @@ func NewGraph(vertexNum int) *Graph {
 }
 
 /**
-添加一条边
+添加一条边,无向图
 */
 func (g *Graph) AddEdges(v1 int, v2 int, weight int) {
 	g.edges[v1][v2] = weight
-	g.edges[v2][v1] = weight // 因为是无向图
+	g.edges[v2][v1] = weight
+	g.edgesNums++
+}
+
+/**
+添加一条边,有向图
+*/
+func (g *Graph) AddDirectedEdges(v1 int, v2 int, weight int) {
+	g.edges[v1][v2] = weight
 	g.edgesNums++
 }
 
@@ -360,6 +367,7 @@ Prim算法
 	2.从uV中选择一个顶点加入到tV中,并从uV中删除这个顶点
 	3.寻找一条最小权重的边(ti,ui)->ui=(uV-tV),并将ui加入tV,边(ti,ui)加入t,从uV中删除ui
 	4.重复3直到uV中的顶点为空,此时所有的边组成的就是最小生成树
+普里姆算法
 */
 func buildMinimumSpanningTree(g *Graph) [][]int {
 	// 原图的顶点信息
@@ -420,8 +428,85 @@ func selectMinimumWeight(uV []int, tv []int, g *Graph) (minT int, minU int, weig
 	return minT, minU, minWeight
 }
 
+/** =================================
+边集数组
+*/
+type Edge struct {
+	begin  int // 边起点在数组中的下标
+	end    int // 边终点在数组中的下标
+	weight int // 边的权重
+}
+
+type EdgeArr []Edge
+
+func newEdgeArr(g *Graph) EdgeArr {
+	edges := make(EdgeArr, g.edgesNums)
+	k := 0
+	for i := 0; i < len(g.edges); i++ {
+		for j := 0; j < len(g.edges[i]); j++ {
+			if g.edges[i][j] != 0 {
+				edges[k].begin = i
+				edges[k].end = j
+				edges[k].weight = g.edges[i][j]
+				g.edges[i][j] = 0
+				g.edges[j][i] = 0
+				k++
+			}
+		}
+	}
+	return edges
+}
+
+// =========================
+
 /**
-迪杰斯特拉算法 求源点v1到其他n-1个顶点的最短路径
+克鲁斯卡尔求最小生成树
+*/
+func kruskal(g *Graph) {
+	cr := make([]int, len(g.vertexList)) // 用来判断是否形成回路
+	for i := 0; i < len(cr); i++ {
+		cr[i] = -1
+	}
+	edges := newEdgeArr(g)
+	sort.Sort(edges)
+	sumW := 0
+	for i := 0; i < len(edges); i++ {
+		road1 := isCircleRoad(cr, edges[i].begin)
+		road2 := isCircleRoad(cr, edges[i].end)
+		if road1 != road2 { // 没有回路
+			cr[road1] = road2
+			fmt.Printf("边(%d,%d) weight=%d\n", edges[i].begin+1, edges[i].end+1, edges[i].weight)
+			sumW += edges[i].weight
+		}
+	}
+	fmt.Printf("sumW=%d\n", sumW)
+}
+
+/**
+用来判断是否形成回路
+*/
+func isCircleRoad(cr []int, vertexIndex int) int {
+	for cr[vertexIndex] != -1 {
+		vertexIndex = cr[vertexIndex]
+	}
+	return vertexIndex
+}
+
+func (e EdgeArr) Less(i int, j int) bool {
+	return e[i].weight < e[j].weight
+}
+
+func (e EdgeArr) Len() int {
+	return len(e)
+}
+
+func (e EdgeArr) Swap(i int, j int) {
+	e[i], e[j] = e[j], e[i]
+}
+
+/**
+求源点v1到其他n-1个顶点的最短路径
+迪杰斯特拉算法
 */
 const maxDistance = 32657 // 用来表示如果2个顶点之间没有路径时候的权值
 func dijkstra(graph Graph, v1 int) {
@@ -462,41 +547,66 @@ func dijkstra(graph Graph, v1 int) {
 	fmt.Printf("%v\n", path)
 }
 
-/** =================================
-边集数组
+/**
+拓扑排序
 */
-type Edge struct {
-	begin  int // 边起点在数组中的下标
-	end    int // 边终点在数组中的下标
-	weight int // 边的权重
+func topologicalSorting(g *Graph) {
+	stack := linear_list.NewLinkedStack()       // 存储没有前驱的顶点
+	precursor := make([]int, len(g.vertexList)) // 存储有前驱的顶点
+	selectNoPrecursorVertex(g, stack, precursor)
+	for !stack.IsEmpty() {
+		i := stack.Pop().Data.(int)
+		fmt.Printf("顶点:%s ", g.vertexList[i])
+		precursor[i] = -1 // 删掉已经访问过的没有前驱的顶点
+		for k := 0; k < len(g.edges[0]); k++ {
+			if g.edges[i][k] == 1 {
+				g.edges[i][k] = 0 // 删掉与该顶点相关联的边
+				precursor[k] = 0
+			}
+		}
+		selectNoPrecursorVertex(g, stack, precursor)
+	}
 }
 
-type EdgeArr []Edge
-
-func newEdgeArr(cap int) EdgeArr {
-	arr := make(EdgeArr, cap)
-	arr[0].begin = 4
-	arr[0].end = 7
-	arr[0].weight = 7
-	return arr
+func selectNoPrecursorVertex(g *Graph, stack *linear_list.LinkedStack, precursor []int) {
+	for i := 0; i < len(g.edges); i++ {
+		for j := 0; j < len(g.edges[i]); j++ {
+			if g.edges[i][j] == 1 && g.edges[j][i] == 0 {
+				precursor[j] = i + 1
+			}
+		}
+	}
+	// fmt.Printf("precursor===%v \n", precursor)
+	for i := 0; i < len(precursor); i++ {
+		if precursor[i] == 0 {
+			stack.Push(i)
+			break
+		}
+	}
+	// stack.Show()
 }
-
-// =========================
 
 func main() {
-	graph := NewGraph(6)
-	buildGraph(graph)
+	// graph := NewGraph(6)
+	// buildUnDirectedGraph(graph)
+	// kruskal(graph)
+
+	graph := NewGraph(9)
+	buildDirectedGraph(graph)
+	topologicalSorting(graph)
+
 	// fmt.Println("深度优先===================")
 	// graph.DfsOfNoRecursionWithMatrix(0)
 	// fmt.Println()
 	// ma := []bool{false, false, false, false, false, false, false, false}
 	// graph.dfs(ma)
 
-	tree := buildMinimumSpanningTree(graph)
-	fmt.Println()
-	for _, v := range tree {
-		fmt.Printf("%v\n", v)
-	}
+	// 最小生成树
+	// tree := buildMinimumSpanningTree(graph)
+	// fmt.Println()
+	// for _, v := range tree {
+	// 	fmt.Printf("%v\n", v)
+	// }
 
 	// fmt.Println("\n广度优先===================")
 	// for i := 0; i < len(graph.vertexList); i++ {
@@ -507,11 +617,12 @@ func main() {
 	// fmt.Println()
 	// graph.bfs(ma)
 
+	// 邻接表表示无向图
 	// graph := CreateUnDirectedGraph(4, 5)
 	// graph.DfsOfNoRecursionWithAdj(0)
 }
 
-func buildGraph(graph *Graph) {
+func buildUnDirectedGraph(graph *Graph) {
 
 	graph.AddVertex("1")
 	graph.AddVertex("2")
@@ -519,8 +630,6 @@ func buildGraph(graph *Graph) {
 	graph.AddVertex("4")
 	graph.AddVertex("5")
 	graph.AddVertex("6")
-
-	rand.Seed(time.Now().UnixNano())
 	graph.AddEdges(0, 1, 6)
 	graph.AddEdges(0, 2, 1)
 	graph.AddEdges(0, 3, 5)
@@ -530,11 +639,32 @@ func buildGraph(graph *Graph) {
 	graph.AddEdges(2, 3, 5)
 	graph.AddEdges(2, 5, 4)
 	graph.AddEdges(4, 5, 6)
-	// 1 2 4 8 5 3 6 7
-	// 1 2 4 8 5 3 6 7
-
 	graph.AddEdges(3, 5, 2)
-	// 1 2 4 3 6 7 5 8
+	graph.ShowGraph()
+}
+
+func buildDirectedGraph(graph *Graph) {
+
+	graph.AddVertex("C1")
+	graph.AddVertex("C2")
+	graph.AddVertex("C3")
+	graph.AddVertex("C4")
+	graph.AddVertex("C5")
+	graph.AddVertex("C6")
+	graph.AddVertex("C7")
+	graph.AddVertex("C8")
+	graph.AddVertex("C9")
+	graph.AddDirectedEdges(0, 3, 1)
+	graph.AddDirectedEdges(0, 6, 1)
+	graph.AddDirectedEdges(3, 7, 1)
+	graph.AddDirectedEdges(3, 2, 1)
+	graph.AddDirectedEdges(6, 2, 1)
+	graph.AddDirectedEdges(2, 4, 1)
+	graph.AddDirectedEdges(2, 7, 1)
+	graph.AddDirectedEdges(1, 6, 1)
+	graph.AddDirectedEdges(1, 8, 1)
+	graph.AddDirectedEdges(8, 5, 1)
+	graph.AddDirectedEdges(5, 4, 1)
 
 	graph.ShowGraph()
 }
