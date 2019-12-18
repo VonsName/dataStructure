@@ -561,7 +561,7 @@ func topologicalSorting(g *Graph) {
 		for k := 0; k < len(g.edges[0]); k++ {
 			if g.edges[i][k] == 1 {
 				g.edges[i][k] = 0 // 删掉与该顶点相关联的边
-				precursor[k] = 0
+				precursor[k] = 0  // 与之相关联的顶点k的前驱置空
 			}
 		}
 		selectNoPrecursorVertex(g, stack, precursor)
