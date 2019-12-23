@@ -1,4 +1,4 @@
-package tree
+package main
 
 import (
 	"dataStructure/queue"
@@ -50,10 +50,11 @@ func (s *Stack) IsEmpty() bool {
 }
 
 type TreeNode struct {
-	data   int
-	left   *TreeNode // 左子树
-	right  *TreeNode // 右子树
-	parent *TreeNode // 父节点
+	data          int
+	left          *TreeNode // 左子树
+	right         *TreeNode // 右子树
+	parent        *TreeNode // 父节点
+	balanceFactor int       // 平衡因子 当前节点的左子树与右子树的高度之差
 }
 
 /**
@@ -69,7 +70,7 @@ func postOrderTraversal(tree *TreeNode) {
 	if tree.right != nil {
 		postOrderTraversal(tree.right)
 	}
-	fmt.Printf("node=%v ", tree.data)
+	fmt.Printf("node=%v->bf=%d ", tree.data, tree.balanceFactor)
 }
 
 /**
@@ -338,6 +339,58 @@ func (root *TreeNode) height() int {
 	return int(1 + math.Max(float64(root.left.height()), float64(root.right.height())))
 }
 
+/**
+平衡二叉搜索树
+*/
+func (root *TreeNode) avlTreeAdd(data int) {
+	_ = root.add(data)
+	// fmt.Printf("addData=%d\n", node.data)
+	root.calTreeMinimumBalanceFactor() // 计算平衡因子
+	minFactorNode := root.selectMinimumNonBalanceTree(data)
+	fmt.Printf("minFactorNode=%d minFactor=%d\n", minFactorNode.data, minFactorNode.balanceFactor)
+}
+
+/**
+计算每个节点的平衡因子(左子树与右子树高度之差 -1 0 1)
+*/
+func (root *TreeNode) calTreeMinimumBalanceFactor() {
+	if root == nil {
+		return
+	}
+	root.balanceFactor = root.left.height() - root.right.height()
+	if root.right != nil {
+		root.right.calTreeMinimumBalanceFactor()
+	}
+	if root.left != nil {
+		root.left.calTreeMinimumBalanceFactor()
+	}
+}
+
+/**
+寻找最小不平衡子树
+*/
+func (root *TreeNode) selectMinimumNonBalanceTree(data int) *TreeNode {
+	balanceFactor := 0
+	node := root
+	if data > node.data && node.right != nil {
+		balanceFactor = node.right.balanceFactor
+		for math.Abs(float64(balanceFactor)) > 1 && node.right != nil {
+			balanceFactor = node.right.balanceFactor
+			node = node.right
+		}
+		return node
+	} else {
+		if node.left != nil {
+			balanceFactor = node.left.balanceFactor
+		}
+		for int(math.Abs(float64(balanceFactor))) > 1 && node.left != nil {
+			balanceFactor = node.left.balanceFactor
+			node = node.left
+		}
+		return node
+	}
+}
+
 // 树的孩子链表表示法
 type ChildNode struct {
 	child int        // 在数组中的下标
@@ -369,33 +422,45 @@ func (tree *CTree) Add(data int) {
 
 }
 
-func main() {
-
-	// testHuffmanTree()
+func tesAvl() {
 	root := &TreeNode{
-		data:  8,
+		data:  3,
 		left:  nil,
 		right: nil,
 	}
-	root.add(5)
-	root.add(15)
-	root.add(3)
-	root.add(7)
-	root.add(1)
-	root.add(11)
-	root.add(23)
-	root.add(9)
-	root.add(20)
-	root.add(21)
-
-	fmt.Printf("postOrderTraversal\n")
+	root.avlTreeAdd(2)
+	root.avlTreeAdd(1)
 	postOrderTraversal(root)
-	fmt.Printf("\npreOrderTraversal\n")
-	preOrderTraversal(root)
-	fmt.Printf("\nmiddleOrderTraversal\n")
-	middleOrderTraversal(root)
-	fmt.Printf("\ntierOrderTraversal\n")
-	tierOrderTraversal(root)
+
+}
+func main() {
+
+	tesAvl()
+	// testHuffmanTree()
+	// root := &TreeNode{
+	// 	data:  8,
+	// 	left:  nil,
+	// 	right: nil,
+	// }
+	// root.add(5)
+	// root.add(15)
+	// root.add(3)
+	// root.add(7)
+	// root.add(1)
+	// root.add(11)
+	// root.add(23)
+	// root.add(9)
+	// root.add(20)
+	// root.add(21)
+	//
+	// fmt.Printf("postOrderTraversal\n")
+	// postOrderTraversal(root)
+	// fmt.Printf("\npreOrderTraversal\n")
+	// preOrderTraversal(root)
+	// fmt.Printf("\nmiddleOrderTraversal\n")
+	// middleOrderTraversal(root)
+	// fmt.Printf("\ntierOrderTraversal\n")
+	// tierOrderTraversal(root)
 	// node, contain := root.contains(5)
 	// fmt.Printf("%d contains of = %v\n", 5, contain)
 	// if contain {

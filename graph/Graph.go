@@ -556,6 +556,9 @@ func topologicalSorting(g *Graph) {
 	selectNoPrecursorVertex(g, stack, precursor)
 	for !stack.IsEmpty() {
 		i := stack.Pop().Data.(int)
+		if precursor[i] == -1 { // 已经访问过的
+			continue
+		}
 		fmt.Printf("顶点:%s ", g.vertexList[i])
 		precursor[i] = -1 // 删掉已经访问过的没有前驱的顶点
 		for k := 0; k < len(g.edges[0]); k++ {
@@ -571,7 +574,7 @@ func topologicalSorting(g *Graph) {
 func selectNoPrecursorVertex(g *Graph, stack *linear_list.LinkedStack, precursor []int) {
 	for i := 0; i < len(g.edges); i++ {
 		for j := 0; j < len(g.edges[i]); j++ {
-			if g.edges[i][j] == 1 && g.edges[j][i] == 0 {
+			if g.edges[i][j] == 1 && g.edges[j][i] == 0 { // 有向图
 				precursor[j] = i + 1
 			}
 		}
@@ -580,7 +583,8 @@ func selectNoPrecursorVertex(g *Graph, stack *linear_list.LinkedStack, precursor
 	for i := 0; i < len(precursor); i++ {
 		if precursor[i] == 0 {
 			stack.Push(i)
-			break
+
+			// break //顶点:C1 顶点:C2 顶点:C4 顶点:C7 顶点:C3 顶点:C8 顶点:C9 顶点:C6 顶点:C5
 		}
 	}
 	// stack.Show()
