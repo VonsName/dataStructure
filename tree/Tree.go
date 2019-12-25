@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dataStructure/linear_list"
 	"dataStructure/queue"
 	"fmt"
 	"math"
@@ -347,9 +348,9 @@ func (root *TreeNode) avlTreeAdd(data int) *TreeNode {
 	root.calTreeMinimumBalanceFactor() // 计算平衡因子
 	minFactorNode := root.selectMinimumNonBalanceTree(data)
 	if minFactorNode.balanceFactor > 1 { // 右旋
-		return minFactorNode.rightRotate(minFactorNode.left)
+		return minFactorNode.rightRotate(minFactorNode.left) // 右旋的时候选取当前旋转节点的左孩子作为支点
 	} else if minFactorNode.balanceFactor < -1 { // 左旋
-		return minFactorNode.leftRotate(minFactorNode.right)
+		return minFactorNode.leftRotate(minFactorNode.right) // 左旋的时候选取当前旋转节点的右孩子作为支点
 	} else {
 		//
 	}
@@ -361,15 +362,30 @@ func (root *TreeNode) avlTreeAdd(data int) *TreeNode {
 */
 func (root *TreeNode) rightRotate(childNode *TreeNode) *TreeNode {
 	fmt.Printf("%s\n", "rightRotate")
-	if pm := root.comPm(childNode); !pm {
-
+	if childNode.balanceFactor != 0 { // 当前节点的平衡因子和子树的平衡因子的数学符号不一致,需要重新构造节点
+		if pm := root.comPm(childNode); !pm {
+			var temp *TreeNode
+			if childNode.balanceFactor < 0 { // 说明右子树比左子树高,右子树一定不为空
+				temp = childNode.singleLeftRotate(childNode)
+			} else { // 说明左子树比右子树高,左子树一定不为空
+				temp = childNode.singleRightRotate(childNode)
+			}
+			root.calTreeMinimumBalanceFactor()
+			childNode = temp
+		}
 	}
 	childNode.parent = root.parent
 	root.left = childNode.right
 	childNode.right = root
 	if root.parent != nil {
+		// root.parent.left = childNode
+		if root.data > root.parent.data {
+			root.parent.right = childNode
+		} else {
+			root.parent.left = childNode
+		}
 		p := root.parent
-		for p != nil {
+		for p != nil && p.parent != nil {
 			p = p.parent
 		}
 		root.parent = childNode
@@ -384,27 +400,69 @@ func (root *TreeNode) rightRotate(childNode *TreeNode) *TreeNode {
 */
 func (root *TreeNode) leftRotate(childNode *TreeNode) *TreeNode {
 	fmt.Printf("%s\n", "leftRotate")
-	if pm := root.comPm(childNode); !pm {
-
+	// 当前需要旋转的节点的平衡因子与旋转支点的平衡因子的数学符号必须一致 (+ -一致)
+	if childNode.balanceFactor != 0 {
+		if pm := root.comPm(childNode); !pm {
+			var temp *TreeNode
+			fmt.Printf("%s\n", "leftRotate  comPm=============")
+			if childNode.balanceFactor < 0 { // 右子树比左子树高 右子树一定不为空
+				temp = childNode.singleLeftRotate(childNode)
+			} else { // 说明左子树比右子树高,左子树一定不为空
+				temp = childNode.singleRightRotate(childNode)
+			}
+			root.calTreeMinimumBalanceFactor() // 重新计算平衡因子
+			childNode = temp                   // 因为重新调整了结构 child需要重新改变
+		}
 	}
 	childNode.parent = root.parent
+	childLeft := childNode.left
 	if root.parent != nil {
+		if root.data > root.parent.data {
+			root.parent.right = childNode
+		} else {
+			root.parent.left = childNode
+		}
 		childNode.left = root
-		root.parent.right = childNode
-		root.left = nil
-		root.right = nil
+		root.right = childLeft
 		root.parent = childNode
 		p := root.parent
-		for p.parent != nil {
+		for p != nil && p.parent != nil {
 			p = p.parent
 		}
 		return p
-	} else { // 如果是根节点
-		root.right = childNode.left
-		root.parent = childNode
-		childNode.left = root
-		return childNode
-	}
+	} // 如果是根节点
+	root.right = childLeft
+	root.parent = childNode
+	childNode.left = root
+	return childNode
+}
+
+/**
+单左旋 用于平衡因子的符号不同的时候
+*/
+func (*TreeNode) singleLeftRotate(childNode *TreeNode) *TreeNode {
+	temp := childNode.right
+	node := temp.left
+	temp.parent = childNode.parent
+	childNode.parent.left = temp
+	temp.left = childNode
+	childNode.parent = temp
+	childNode.right = node
+	return temp
+}
+
+/**
+单右旋 用于平衡因子的符号不同的时候
+*/
+func (*TreeNode) singleRightRotate(childNode *TreeNode) *TreeNode {
+	temp := childNode.left
+	node := temp.right
+	temp.parent = childNode.parent
+	childNode.parent.right = temp
+	temp.right = childNode
+	childNode.parent = temp
+	childNode.left = node
+	return temp
 }
 
 /**
@@ -447,28 +505,27 @@ func (root *TreeNode) calTreeMinimumBalanceFactor() {
 */
 func (root *TreeNode) selectMinimumNonBalanceTree(data int) *TreeNode {
 	node := root
-	// if data > node.data && node.right != nil {
-	for math.Abs(float64(node.balanceFactor)) > 1 {
+	stack := linear_list.NewLinkedStack()
+	for math.Abs(float64(node.balanceFactor)) >= 1 {
+		if math.Abs(float64(node.balanceFactor)) == 2 {
+			stack.Push(node)
+		}
 		if data > node.data && node.right != nil {
 			node = node.right
 		} else if data < node.data && node.left != nil {
 			node = node.left
 		}
 	}
-	if node.parent != nil {
-		return node.parent
+	if !stack.IsEmpty() {
+		return stack.Pop().Data.(*TreeNode)
 	}
-	return node
-	// } else {
-	// 	if node.left != nil {
-	// 		balanceFactor = node.left.balanceFactor
-	// 	}
-	// 	for int(math.Abs(float64(balanceFactor))) > 1 && node.left != nil {
-	// 		balanceFactor = node.left.balanceFactor
-	// 		node = node.left
-	// 	}
-	// 	return node
-	// }
+	return &TreeNode{
+		data:          0,
+		left:          nil,
+		right:         nil,
+		parent:        nil,
+		balanceFactor: 0,
+	}
 }
 
 // 树的孩子链表表示法
@@ -502,7 +559,7 @@ func (tree *CTree) Add(data int) {
 
 }
 
-func tesAvl() {
+func tesAvl1() {
 	root := &TreeNode{
 		data:  3,
 		left:  nil,
@@ -523,10 +580,39 @@ func tesAvl() {
 	fmt.Println("\n77777777777777777")
 	root = root.avlTreeAdd(7)
 	preOrderTraversal(root)
+	fmt.Println("\n=====================")
+	root = root.avlTreeAdd(10)
+	preOrderTraversal(root)
+	fmt.Println("\n-------------------------------")
+	root = root.avlTreeAdd(9)
+	preOrderTraversal(root)
+	fmt.Println("\n--------------8888888888888888-----------------")
+	root = root.avlTreeAdd(8)
+	root.calTreeMinimumBalanceFactor()
+	preOrderTraversal(root)
+}
+
+func tesAvl2() {
+	root := &TreeNode{
+		data:  7,
+		left:  nil,
+		right: nil,
+	}
+	root = root.avlTreeAdd(8)
+	root = root.avlTreeAdd(3)
+	preOrderTraversal(root)
+	fmt.Println()
+	root = root.avlTreeAdd(9)
+	preOrderTraversal(root)
+	fmt.Println()
+	root = root.avlTreeAdd(5)
+	preOrderTraversal(root)
+	root = root.avlTreeAdd(4)
+	preOrderTraversal(root)
 }
 func main() {
 
-	tesAvl()
+	tesAvl2()
 	// testHuffmanTree()
 	// root := &TreeNode{
 	// 	data:  8,
