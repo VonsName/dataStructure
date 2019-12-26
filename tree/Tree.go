@@ -57,6 +57,7 @@ type TreeNode struct {
 	right         *TreeNode // 右子树
 	parent        *TreeNode // 父节点
 	balanceFactor int       // 平衡因子 当前节点的左子树与右子树的高度之差
+	nodeSize      int
 }
 
 /**
@@ -171,9 +172,7 @@ func (tree *HuffmanTree) Less(i int, j int) bool {
 }
 
 func (tree *HuffmanTree) Swap(i int, j int) {
-	temp := tree[i]
-	tree[i].weight = tree[j].weight
-	tree[j].weight = temp.weight
+	tree[i], tree[j] = tree[j], tree[i]
 }
 func initWeight(tree *HuffmanTree) {
 	if tree == nil {
@@ -183,7 +182,6 @@ func initWeight(tree *HuffmanTree) {
 	// 初始化节点的权值
 	for i := 1; i <= n; i++ {
 		tree[i].weight = rand.Intn(100)
-
 	}
 	// 以及构造Huffman 需要将原来的n个节点进行合并,需要n-1次合并,产生n-1个新节点
 	for i := n + 1; i <= m; i++ {
@@ -246,7 +244,11 @@ func isNumber(c string) (matched bool) {
 
 // 搜索二叉树
 func (root *TreeNode) add(data int) *TreeNode {
+	if node, cn := root.contains(data); cn {
+		return node
+	}
 	if root == nil {
+		root.nodeSize++
 		return &TreeNode{
 			data:  data,
 			left:  nil,
@@ -338,6 +340,34 @@ func (root *TreeNode) height() int {
 		return -1
 	}
 	return int(1 + math.Max(float64(root.left.height()), float64(root.right.height())))
+}
+
+/**
+判断是否是满二叉树
+*/
+func (root *TreeNode) isFullBinaryTree() (bool, *TreeNode) {
+	if root == nil {
+		return false, nil
+	}
+	k := root.height()
+	// 具有n的节点的完全二叉树的深度为Log(n)+1或者Log(n+1)  不是完全二叉树不能用来判断是否是满二叉树
+	// if int(math.Log2(float64(root.nodeSize+1))) != k && int(math.Log2(float64(root.nodeSize))+1) != k {
+	// 	return false
+	// }
+	// 深度为K的二叉树最多有2的k次方-1个节点
+	// 节点数=2的k次方-1 是满二叉树
+	if root.nodeSize == int(math.Pow(2, float64(k))-1) {
+		return true, nil
+	}
+	if root.left != nil && root.right == nil {
+		return false, root
+	} else {
+		f, node := root.left.isFullBinaryTree()
+		if f {
+			return root.right.isFullBinaryTree()
+		}
+		return f, node
+	}
 }
 
 /**
@@ -610,9 +640,77 @@ func tesAvl2() {
 	root = root.avlTreeAdd(4)
 	preOrderTraversal(root)
 }
+
+/**
+构建一个大顶堆(所有根节点的值大于左右孩子)
+*/
+func buildBigHeap(a []int) *TreeNode {
+
+	if len(a) < 0 {
+		return nil
+	}
+	tree := &TreeNode{
+		data:          a[0],
+		left:          nil,
+		right:         nil,
+		parent:        nil,
+		balanceFactor: 0,
+	}
+
+	tree = tree.bigHeapAddNode(tree, a[0])
+	tree = tree.bigHeapAddNode(tree, a[1])
+	tree = tree.bigHeapAddNode(tree, a[2])
+	tree = tree.bigHeapAddNode(tree, a[3])
+	tree = tree.bigHeapAddNode(tree, a[4])
+	return tree
+}
+
+func (*TreeNode) bigHeapAddNode(root *TreeNode, data int) *TreeNode {
+	if node, cn := root.contains(data); cn {
+		return node
+	}
+	if root == nil {
+		return &TreeNode{
+			data:          data,
+			left:          nil,
+			right:         nil,
+			parent:        nil,
+			balanceFactor: 0,
+		}
+	}
+
+	root.height()
+	if root.left == nil {
+		root.left = root.left.bigHeapAddNode(root.left, data)
+		if data > root.data {
+			// left := root.left
+			// root.parent = left
+			// left.left = root
+			// root.left = nil
+			// root = left
+			d := root.data
+			root.data = data
+			root.left.data = d
+		}
+	} else {
+		root.right = root.right.bigHeapAddNode(root.right, data)
+	}
+	return root
+}
+
+func testBuildBigHeap() {
+	a := []int{4, 5, 1, 3, 9}
+	heap := buildBigHeap(a)
+	preOrderTraversal(heap)
+	fmt.Println()
+	middleOrderTraversal(heap)
+}
 func main() {
 
-	tesAvl2()
+	pow10 := math.Pow(5, 2)
+	fmt.Printf("%d\n", int(pow10))
+	// testBuildBigHeap()
+	// tesAvl2()
 	// testHuffmanTree()
 	// root := &TreeNode{
 	// 	data:  8,
