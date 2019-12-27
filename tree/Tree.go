@@ -83,7 +83,7 @@ func preOrderTraversal(tree *TreeNode) {
 	if tree == nil {
 		return
 	}
-	fmt.Printf("node=%v <-> bf=%d, ", tree.data, tree.balanceFactor)
+	fmt.Printf("node=%v <-> bf=%d childNodeSize=%d\n ", tree.data, tree.balanceFactor, tree.nodeSize)
 	if tree.left != nil {
 		preOrderTraversal(tree.left)
 	}
@@ -248,11 +248,12 @@ func (root *TreeNode) add(data int) *TreeNode {
 		return node
 	}
 	if root == nil {
-		root.nodeSize++
 		return &TreeNode{
-			data:  data,
-			left:  nil,
-			right: nil,
+			data:          data,
+			left:          nil,
+			right:         nil,
+			balanceFactor: 0,
+			nodeSize:      1,
 		}
 	}
 	if data < root.data {
@@ -262,6 +263,7 @@ func (root *TreeNode) add(data int) *TreeNode {
 		root.right = root.right.add(data)
 		root.right.parent = root
 	}
+	root.nodeSize++
 	return root
 }
 
@@ -337,7 +339,7 @@ func (root *TreeNode) findMax() (maxNode *TreeNode) {
 */
 func (root *TreeNode) height() int {
 	if root == nil {
-		return -1
+		return 0
 	}
 	return int(1 + math.Max(float64(root.left.height()), float64(root.right.height())))
 }
@@ -345,10 +347,7 @@ func (root *TreeNode) height() int {
 /**
 判断是否是满二叉树
 */
-func (root *TreeNode) isFullBinaryTree() (bool, *TreeNode) {
-	if root == nil {
-		return false, nil
-	}
+func (root *TreeNode) isFullBinaryTree(tree *TreeNode) (bool, *TreeNode) {
 	k := root.height()
 	// 具有n的节点的完全二叉树的深度为Log(n)+1或者Log(n+1)  不是完全二叉树不能用来判断是否是满二叉树
 	// if int(math.Log2(float64(root.nodeSize+1))) != k && int(math.Log2(float64(root.nodeSize))+1) != k {
@@ -356,17 +355,21 @@ func (root *TreeNode) isFullBinaryTree() (bool, *TreeNode) {
 	// }
 	// 深度为K的二叉树最多有2的k次方-1个节点
 	// 节点数=2的k次方-1 是满二叉树
+	if root.nodeSize == 1 {
+		return false, root
+	}
 	if root.nodeSize == int(math.Pow(2, float64(k))-1) {
 		return true, nil
 	}
 	if root.left != nil && root.right == nil {
 		return false, root
 	} else {
-		f, node := root.left.isFullBinaryTree()
+		f, node := root.left.isFullBinaryTree(tree)
 		if f {
-			return root.right.isFullBinaryTree()
+			return root.right.isFullBinaryTree(tree)
+		} else {
+			return f, node
 		}
-		return f, node
 	}
 }
 
@@ -655,20 +658,24 @@ func buildBigHeap(a []int) *TreeNode {
 		right:         nil,
 		parent:        nil,
 		balanceFactor: 0,
+		nodeSize:      1,
 	}
 
-	tree = tree.bigHeapAddNode(tree, a[0])
 	tree = tree.bigHeapAddNode(tree, a[1])
 	tree = tree.bigHeapAddNode(tree, a[2])
 	tree = tree.bigHeapAddNode(tree, a[3])
 	tree = tree.bigHeapAddNode(tree, a[4])
+	tree = tree.bigHeapAddNode(tree, a[5])
+	tree = tree.bigHeapAddNode(tree, 20)
+	tree = tree.bigHeapAddNode(tree, 17)
+	tree = tree.bigHeapAddNode(tree, 2)
+	tree = tree.bigHeapAddNode(tree, 0)
+	tree = tree.bigHeapAddNode(tree, 8)
+	tree = tree.bigHeapAddNode(tree, 13)
 	return tree
 }
 
 func (*TreeNode) bigHeapAddNode(root *TreeNode, data int) *TreeNode {
-	if node, cn := root.contains(data); cn {
-		return node
-	}
 	if root == nil {
 		return &TreeNode{
 			data:          data,
@@ -676,40 +683,98 @@ func (*TreeNode) bigHeapAddNode(root *TreeNode, data int) *TreeNode {
 			right:         nil,
 			parent:        nil,
 			balanceFactor: 0,
+			nodeSize:      1,
 		}
 	}
-
-	root.height()
-	if root.left == nil {
-		root.left = root.left.bigHeapAddNode(root.left, data)
-		if data > root.data {
-			// left := root.left
-			// root.parent = left
-			// left.left = root
-			// root.left = nil
-			// root = left
-			d := root.data
-			root.data = data
-			root.left.data = d
+	tree, node := root.isFullBinaryTree(root)
+	if !tree {
+		if node.left == nil {
+			node.left = node.left.bigHeapAddNode(node.left, data)
+			node.left.parent = node
+			left := node.left
+			parent := left.parent
+			if left.data < parent.data {
+				parent.nodeSize++
+			} else {
+				for parent != nil && left.data > parent.data {
+					tempData := parent.data
+					parent.data = left.data
+					left.data = tempData
+					left = parent
+					parent.nodeSize++
+					parent = parent.parent
+				}
+			}
+		} else {
+			if node.right == nil {
+				node.right = node.right.bigHeapAddNode(node.right, data)
+				node.right.parent = node
+				right := node.right
+				parent := right.parent
+				if right.data < parent.data {
+					parent.nodeSize++
+				} else {
+					for parent != nil && right.data > parent.data {
+						tempData := parent.data
+						parent.data = right.data
+						right.data = tempData
+						right = parent
+						parent.nodeSize++
+						parent = parent.parent
+					}
+				}
+			}
 		}
 	} else {
-		root.right = root.right.bigHeapAddNode(root.right, data)
+		root.left = root.left.bigHeapAddNode(root.left, data)
+		root.nodeSize++
 	}
 	return root
 }
 
 func testBuildBigHeap() {
-	a := []int{4, 5, 1, 3, 9}
+	a := []int{4, 5, 1, 3, 9, 11}
 	heap := buildBigHeap(a)
 	preOrderTraversal(heap)
-	fmt.Println()
-	middleOrderTraversal(heap)
+	// fmt.Println()
+	// middleOrderTraversal(heap)
+	// tree := &TreeNode{
+	// 	data:          5,
+	// 	left:          nil,
+	// 	right:         nil,
+	// 	parent:        nil,
+	// 	balanceFactor: 0,
+	// 	nodeSize:      1,
+	// }
+	// tree.add(4)
+	// tree.right = &TreeNode{
+	// 	data:          1,
+	// 	left:          nil,
+	// 	right:         nil,
+	// 	parent:        nil,
+	// 	balanceFactor: 0,
+	// 	nodeSize:      1,
+	// }
+	// tree.nodeSize++
+	// tree.add(11)
+	// tree.add(20)
+	// tree.add(35)
+	// tree.add(60)
+	// tree.add(10)
+	// tree.add(12)
+	// tree.add(18)
+	// tree.add(21)
+	// // tree.add(25)
+	// // tree.add(40)
+	// binaryTree, node := tree.isFullBinaryTree(tree)
+	// fmt.Printf("tree.isFullBinaryTree=%v node=%v\n", binaryTree, node)
+	// if !binaryTree {
+	// 	fmt.Printf("node.left=%v", node.left)
+	// }
 }
 func main() {
 
-	pow10 := math.Pow(5, 2)
-	fmt.Printf("%d\n", int(pow10))
-	// testBuildBigHeap()
+	testBuildBigHeap()
 	// tesAvl2()
 	// testHuffmanTree()
 	// root := &TreeNode{
