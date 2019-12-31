@@ -7,25 +7,29 @@ import (
 func main() {
 	// directInsertSort("desc")
 
-	a := []int{6, 5, 2, 13, 6, 23, 3, 8, 9}
-	s := a[:]
-	// bubbleSort1(a)
-	// reverse(a)
-	// fastSort(a, 0, len(a)-1)
-	// bothWayBubbleSort(a)
-	// fmt.Printf("%v\n", a)
-	// shellSort(a)
-	//
-	// printOut(345)
-	// var res []int
-	// fmt.Printf("%v ", a)
-	quickSort(a)
-	fmt.Printf("a=%v\n", a)
-	fmt.Printf("origin=%v\n", s)
-	s = append(s[:0], 1, 2, 3, 4, 5, 6, 7, 8, 9)
-	fmt.Printf("append1=%v \n", s)
-	s = append(s[:], 1, 2, 3, 4, 5, 6, 7, 8, 9)
-	fmt.Printf("append2=%v \n", s)
+	// a := []int{6, 5, 2, 13, 6, 23, 3, 8, 9}
+	// s := a[:]
+	// // bubbleSort1(a)
+	// // reverse(a)
+	// // fastSort(a, 0, len(a)-1)
+	// // bothWayBubbleSort(a)
+	// // fmt.Printf("%v\n", a)
+	// // shellSort(a)
+	// //
+	// // printOut(345)
+	// // var res []int
+	// // fmt.Printf("%v ", a)
+	// quickSort(a)
+	// fmt.Printf("a=%v\n", a)
+	// fmt.Printf("origin=%v\n", s)
+	// s = append(s[:0], 1, 2, 3, 4, 5, 6, 7, 8, 9)
+	// fmt.Printf("append1=%v \n", s)
+	// s = append(s[:], 1, 2, 3, 4, 5, 6, 7, 8, 9)
+	// fmt.Printf("append2=%v \n", s)
+	a := []int{16, 7, 3, 20, 17, 8}
+	heapSort(a)
+	a[len(a)-1], a[0] = a[0], a[len(a)-1]
+	fmt.Printf("%v\n", a)
 }
 
 func printOut(n int) {
@@ -222,4 +226,65 @@ func directInsertSort(mode string) {
 	}
 
 	fmt.Printf("%v\n", a)
+}
+
+/**
+堆排序 利用完全二叉树的性质
+ 将完全二叉树按照从顶之下,从左至右的顺序存入数组q
+ i=0时为根节点,无双亲,否则qi的双亲为i-1/2
+ qi的左孩子为2i+1,右孩子为2i+2
+*/
+
+func heapSort(a []int) {
+	k := 0
+	for i := len(a) - 1; i >= 0; i-- {
+		buildHeap(a, i)
+		a[i], a[k] = a[k], a[i]
+	}
+}
+
+/**
+构建堆
+*/
+func buildHeap(a []int, i int) {
+	tempI := i
+	for parentIndex := (i - 1) / 2; parentIndex >= 0 && i >= 0; parentIndex = (i - 1) / 2 {
+		leftChildIndex := 2*parentIndex + 1
+		rightChildIndex := 2*parentIndex + 2
+
+		m := 0
+		if a[leftChildIndex] > a[parentIndex] {
+			m = leftChildIndex
+			a[parentIndex], a[leftChildIndex] = a[leftChildIndex], a[parentIndex]
+		}
+		if rightChildIndex < len(a) {
+			m = rightChildIndex
+			if a[rightChildIndex] > a[parentIndex] {
+				a[parentIndex], a[rightChildIndex] = a[rightChildIndex], a[parentIndex]
+			}
+		}
+		if m != 0 {
+			childSort(m, tempI, a)
+		}
+		i -= 2
+	}
+}
+
+func childSort(parentIndex int, i int, a []int) {
+
+	leftChildIndex := 2*parentIndex + 1
+	rightChildIndex := 2*parentIndex + 2
+
+	if leftChildIndex <= i {
+		if a[leftChildIndex] > a[parentIndex] {
+			a[parentIndex], a[leftChildIndex] = a[leftChildIndex], a[parentIndex]
+		}
+		childSort(leftChildIndex, i, a)
+	}
+	if rightChildIndex <= i {
+		if a[rightChildIndex] > a[parentIndex] {
+			a[parentIndex], a[rightChildIndex] = a[rightChildIndex], a[parentIndex]
+		}
+		childSort(rightChildIndex, i, a)
+	}
 }
