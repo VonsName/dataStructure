@@ -26,9 +26,8 @@ func main() {
 	// fmt.Printf("append1=%v \n", s)
 	// s = append(s[:], 1, 2, 3, 4, 5, 6, 7, 8, 9)
 	// fmt.Printf("append2=%v \n", s)
-	a := []int{16, 7, 3, 20, 17, 8}
+	a := []int{35, 20, 55, 60, 40, 38, 10, 70, 40}
 	heapSort(a)
-	a[len(a)-1], a[0] = a[0], a[len(a)-1]
 	fmt.Printf("%v\n", a)
 }
 
@@ -237,54 +236,77 @@ func directInsertSort(mode string) {
 
 func heapSort(a []int) {
 	k := 0
+	visit := make([]bool, len(a))
+	for i := 0; i < len(visit); i++ {
+		visit[i] = false
+	}
 	for i := len(a) - 1; i >= 0; i-- {
-		buildHeap(a, i)
-		a[i], a[k] = a[k], a[i]
+		buildHeap(a, i, visit)
+		visit[i] = true
+		// 当父节点是0的时候 直接比较父节点以及左右孩子即可
+		if i == 2 || i == 1 {
+			break
+		}
+		a[k], a[i] = a[i], a[k]
 	}
 }
 
 /**
 构建堆
 */
-func buildHeap(a []int, i int) {
-	tempI := i
-	for parentIndex := (i - 1) / 2; parentIndex >= 0 && i >= 0; parentIndex = (i - 1) / 2 {
+func buildHeap(a []int, i int, visit []bool) {
+	temp := i
+	parentIndex := (i - 1) / 2
+	if parentIndex == 0 {
 		leftChildIndex := 2*parentIndex + 1
 		rightChildIndex := 2*parentIndex + 2
-
-		m := 0
-		if a[leftChildIndex] > a[parentIndex] {
-			m = leftChildIndex
-			a[parentIndex], a[leftChildIndex] = a[leftChildIndex], a[parentIndex]
+		if a[leftChildIndex] < a[parentIndex] {
+			swap(parentIndex, leftChildIndex, a)
 		}
-		if rightChildIndex < len(a) {
-			m = rightChildIndex
-			if a[rightChildIndex] > a[parentIndex] {
-				a[parentIndex], a[rightChildIndex] = a[rightChildIndex], a[parentIndex]
+		if a[rightChildIndex] < a[parentIndex] {
+			swap(parentIndex, rightChildIndex, a)
+		}
+		if a[rightChildIndex] < a[leftChildIndex] {
+			swap(leftChildIndex, rightChildIndex, a)
+		}
+	} else {
+		for ; parentIndex >= 0 && i >= 0; parentIndex = (i - 1) / 2 {
+			leftChildIndex := 2*parentIndex + 1
+			rightChildIndex := 2*parentIndex + 2
+			if a[leftChildIndex] > a[parentIndex] && !visit[leftChildIndex] {
+				swap(parentIndex, leftChildIndex, a)
+				childSort(leftChildIndex, temp, a, visit)
 			}
+			if (rightChildIndex) < len(a) && !visit[rightChildIndex] {
+				if a[rightChildIndex] > a[parentIndex] {
+					swap(parentIndex, rightChildIndex, a)
+					childSort(leftChildIndex, temp, a, visit)
+				}
+			}
+			i -= 2
 		}
-		if m != 0 {
-			childSort(m, tempI, a)
-		}
-		i -= 2
 	}
 }
 
-func childSort(parentIndex int, i int, a []int) {
+func childSort(parentIndex int, i int, a []int, visit []bool) {
 
 	leftChildIndex := 2*parentIndex + 1
 	rightChildIndex := 2*parentIndex + 2
 
-	if leftChildIndex <= i {
+	if leftChildIndex < len(a) && !visit[leftChildIndex] {
 		if a[leftChildIndex] > a[parentIndex] {
-			a[parentIndex], a[leftChildIndex] = a[leftChildIndex], a[parentIndex]
+			swap(parentIndex, leftChildIndex, a)
 		}
-		childSort(leftChildIndex, i, a)
+		childSort(leftChildIndex, i, a, visit)
 	}
-	if rightChildIndex <= i {
+	if rightChildIndex < len(a) && !visit[rightChildIndex] {
 		if a[rightChildIndex] > a[parentIndex] {
-			a[parentIndex], a[rightChildIndex] = a[rightChildIndex], a[parentIndex]
+			swap(parentIndex, rightChildIndex, a)
 		}
-		childSort(rightChildIndex, i, a)
+		childSort(rightChildIndex, i, a, visit)
 	}
+}
+
+func swap(i int, j int, a []int) {
+	a[i], a[j] = a[j], a[i]
 }
